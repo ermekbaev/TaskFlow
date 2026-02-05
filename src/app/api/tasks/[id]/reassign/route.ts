@@ -26,6 +26,26 @@ export async function POST(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
+    // Auto-add new assignee as project member if not already
+    const existingMember = await prisma.projectMember.findUnique({
+      where: {
+        projectId_userId: {
+          projectId: task.projectId,
+          userId: newAssigneeId,
+        },
+      },
+    });
+
+    if (!existingMember) {
+      await prisma.projectMember.create({
+        data: {
+          projectId: task.projectId,
+          userId: newAssigneeId,
+          roleInProject: 'DEV',
+        },
+      });
+    }
+
     // If MANAGER, directly reassign
     if (session.role === 'MANAGER') {
       const updated = await prisma.task.update({
@@ -40,21 +60,8 @@ export async function POST(
       return NextResponse.json({ task: updated, directReassign: true });
     }
 
-    // USER creates a reassign request
-    const reassignRequest = await prisma.reassignRequest.create({
-      data: {
-        taskId: params.id,
-        requestedById: session.userId,
-        newAssigneeId,
-        comment: comment || null,
-      },
-      include: {
-        task: { select: { id: true, key: true, title: true } },
-        requestedBy: { select: { id: true, name: true } },
-      },
-    });
-
-    return NextResponse.json({ reassignRequest });
+    // Only MANAGER can reassign tasks
+    return NextResponse.json({ error: 'Only managers can reassign tasks' }, { status: 403 });
   } catch (error) {
     console.error('Reassign error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

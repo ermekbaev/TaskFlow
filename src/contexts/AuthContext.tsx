@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface User {
   id: string;
@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const fetchUser = useCallback(async () => {
     try {
@@ -49,6 +50,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
+
+  // Redirect to /login if not authenticated on protected pages
+  useEffect(() => {
+    if (loading) return;
+    const publicPaths = ['/', '/login', '/register'];
+    if (!user && !publicPaths.includes(pathname)) {
+      router.push('/login');
+    }
+  }, [user, loading, pathname, router]);
 
   const login = async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {

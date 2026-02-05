@@ -44,12 +44,31 @@ export async function PUT(
       },
     });
 
-    // If approved, update the task assignee
+    // If approved, update the task assignee and ensure they're a project member
     if (status === 'APPROVED') {
-      await prisma.task.update({
+      const task = await prisma.task.update({
         where: { id: reassignRequest.taskId },
         data: { assigneeId: reassignRequest.newAssigneeId },
       });
+
+      const existingMember = await prisma.projectMember.findUnique({
+        where: {
+          projectId_userId: {
+            projectId: task.projectId,
+            userId: reassignRequest.newAssigneeId,
+          },
+        },
+      });
+
+      if (!existingMember) {
+        await prisma.projectMember.create({
+          data: {
+            projectId: task.projectId,
+            userId: reassignRequest.newAssigneeId,
+            roleInProject: 'DEV',
+          },
+        });
+      }
     }
 
     return NextResponse.json({ request: updated });

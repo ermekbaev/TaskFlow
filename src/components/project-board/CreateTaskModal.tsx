@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from '@/components/base/Modal';
 import Button from '@/components/base/Button';
 import Input from '@/components/base/Input';
+import UserPicker from '@/components/base/UserPicker';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -32,19 +33,6 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     storyPoints: 1,
     dueDate: '',
   });
-
-  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!isOpen || !projectId) return;
-    fetch(`/api/projects/${projectId}/members`)
-      .then(res => res.json())
-      .then(data => {
-        const users = (data.members || []).map((m: any) => m.user).filter(Boolean);
-        setAvailableUsers(users);
-      })
-      .catch(console.error);
-  }, [isOpen, projectId]);
 
   const handleSubmit = () => {
     if (!task.title) return;
@@ -145,23 +133,12 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Исполнитель
-          </label>
-          <select
-            value={task.assigneeId}
-            onChange={(e) => setTask({ ...task, assigneeId: e.target.value })}
-            className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Выберите исполнителя</option>
-            {availableUsers.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name} ({user.email})
-              </option>
-            ))}
-          </select>
-        </div>
+        <UserPicker
+          label="Исполнитель"
+          value={task.assigneeId}
+          onChange={(userId) => setTask({ ...task, assigneeId: userId })}
+          placeholder="Поиск пользователя по имени или email..."
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Input

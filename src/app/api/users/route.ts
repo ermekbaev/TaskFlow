@@ -9,25 +9,32 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role !== 'MANAGER') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const isManager = session.role === 'MANAGER';
 
     const users = await prisma.user.findMany({
-      include: { permissions: true },
+      where: { isActive: true },
+      include: isManager ? { permissions: true } : undefined,
       orderBy: { createdAt: 'asc' },
     });
 
     return NextResponse.json({
-      users: users.map(u => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        isActive: u.isActive,
-        createdAt: u.createdAt,
-        permissions: u.permissions.map(p => p.permission),
-      })),
+      users: users.map(u => {
+        const base = {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          isActive: u.isActive,
+        };
+        if (isManager) {
+          return {
+            ...base,
+            createdAt: u.createdAt,
+            permissions: (u as any).permissions?.map((p: any) => p.permission) || [],
+          };
+        }
+        return base;
+      }),
     });
   } catch (error) {
     console.error('Get users error:', error);

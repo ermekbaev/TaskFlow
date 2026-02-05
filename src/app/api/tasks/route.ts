@@ -81,6 +81,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // Auto-add assignee as project member if not already
+    if (assigneeId) {
+      const existingMember = await prisma.projectMember.findUnique({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId: assigneeId,
+          },
+        },
+      });
+
+      if (!existingMember) {
+        await prisma.projectMember.create({
+          data: {
+            projectId,
+            userId: assigneeId,
+            roleInProject: 'DEV',
+          },
+        });
+      }
+    }
+
     // Generate task key
     const taskCount = await prisma.task.count({
       where: { projectId },

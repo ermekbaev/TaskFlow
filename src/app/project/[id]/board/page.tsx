@@ -11,7 +11,13 @@ import ProjectSettings from '@/components/project-board/ProjectSettings';
 import GitIntegration from '@/components/project-board/GitIntegration';
 import ReassignModal from '@/components/feature/ReassignModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockColumns } from '@/mocks/tasks';
+const BOARD_COLUMNS = [
+  { id: '1', name: 'Backlog', order: 1 },
+  { id: '2', name: 'To Do', order: 2 },
+  { id: '3', name: 'In Progress', order: 3 },
+  { id: '4', name: 'Review', order: 4 },
+  { id: '5', name: 'Done', order: 5 },
+];
 
 const ProjectBoard: React.FC = () => {
   const params = useParams();
@@ -22,7 +28,7 @@ const ProjectBoard: React.FC = () => {
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [columns] = useState(mockColumns);
+  const [columns] = useState(BOARD_COLUMNS);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showGitModal, setShowGitModal] = useState(false);
@@ -224,7 +230,7 @@ const ProjectBoard: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-5 gap-6">
           {columns.map((column) => (
             <div
               key={column.id}
@@ -355,17 +361,69 @@ const ProjectBoard: React.FC = () => {
                 <i className="ri-kanban-view mr-2"></i>
                 Вернуться к доске
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowTaskDetail(false);
-                  handleReassignClick(selectedTask);
-                }}
-                className="flex-1"
-              >
-                <i className="ri-user-shared-line mr-2"></i>
-                Переназначить
-              </Button>
+              {!isManager && selectedTask.assigneeId === currentUser.id && selectedTask.status !== 'Review' && selectedTask.status !== 'Done' && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'Review' }),
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setTasks(tasks.map(t => t.id === data.task.id ? data.task : t));
+                        setSelectedTask(data.task);
+                      }
+                    } catch (error) {
+                      console.error('Error submitting task:', error);
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  <i className="ri-check-line mr-2"></i>
+                  Сдать задачу
+                </Button>
+              )}
+              {isManager && selectedTask.status === 'Review' && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'Done' }),
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setTasks(tasks.map(t => t.id === data.task.id ? data.task : t));
+                        setSelectedTask(data.task);
+                      }
+                    } catch (error) {
+                      console.error('Error accepting task:', error);
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  <i className="ri-check-double-line mr-2"></i>
+                  Принять задачу
+                </Button>
+              )}
+              {isManager && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowTaskDetail(false);
+                    handleReassignClick(selectedTask);
+                  }}
+                  className="flex-1"
+                >
+                  <i className="ri-user-shared-line mr-2"></i>
+                  Переназначить
+                </Button>
+              )}
             </div>
           </div>
         )}
