@@ -84,7 +84,7 @@ const ProjectBoard: React.FC = () => {
 
   if (!project) return null;
 
-  const isManager = currentUser.role === 'MANAGER';
+  const isManager = currentUser.role === 'PM';
 
   const handleDragStart = (taskId: string) => {
     setDraggedTask(taskId);
@@ -422,6 +422,29 @@ const ProjectBoard: React.FC = () => {
                 >
                   <i className="ri-user-shared-line mr-2"></i>
                   Переназначить
+                </Button>
+              )}
+              {(isManager || selectedTask.assigneeId === currentUser.id) && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (!confirm('Удалить эту задачу? Это действие необратимо.')) return;
+                    try {
+                      const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+                        method: 'DELETE',
+                      });
+                      if (res.ok) {
+                        setTasks(tasks.filter(t => t.id !== selectedTask.id));
+                        setShowTaskDetail(false);
+                        setSelectedTask(null);
+                      }
+                    } catch (error) {
+                      console.error('Error deleting task:', error);
+                    }
+                  }}
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <i className="ri-delete-bin-line"></i>
                 </Button>
               )}
             </div>

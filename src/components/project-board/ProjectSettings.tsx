@@ -42,6 +42,8 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
   });
 
   const [members, setMembers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [addingMember, setAddingMember] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showReworkConfirm, setShowReworkConfirm] = useState(false);
@@ -51,6 +53,10 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     fetch(`/api/projects/${project.id}/members`)
       .then(res => res.json())
       .then(data => setMembers(data.members || []))
+      .catch(console.error);
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => setAllUsers(data.users || []))
       .catch(console.error);
   }, [isOpen, project.id]);
 
@@ -101,12 +107,44 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     }
   };
 
+  const handleAddMember = async (userId: string) => {
+    setAddingMember(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, roleInProject: 'DEV' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMembers([...members, data.member]);
+      }
+    } catch (error) {
+      console.error('Error adding member:', error);
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${project.id}/members`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (res.ok) {
+        setMembers(members.filter(m => m.userId !== userId));
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+    }
+  };
+
   const handleDeleteProject = async () => {
     try {
       const res = await fetch(`/api/projects/${project.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Archived' }),
+        method: 'DELETE',
       });
       if (res.ok) {
         setShowDeleteConfirm(false);
@@ -222,14 +260,55 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{member.user?.name || 'Неизвестно'}</p>
-                      <p className="text-sm text-gray-500">{member.roleInProject}</p>
+                      <p className="text-sm text-gray-500">{member.user?.email}</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => handleRemoveMember(member.userId)}
+                    className="text-red-400 hover:text-red-600 cursor-pointer p-1"
+                    title="Удалить участника"
+                  >
+                    <i className="ri-close-line"></i>
+                  </button>
                 </div>
               ))}
               {members.length === 0 && (
                 <p className="text-sm text-gray-500">Нет участников</p>
               )}
+            </div>
+
+            {/* Добавление участника */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Добавить участника</label>
+              <div className="flex space-x-2">
+                <select
+                  id="addMemberSelect"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Выберите пользователя...</option>
+                  {allUsers
+                    .filter(u => !members.some(m => m.userId === u.id))
+                    .map(u => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                    ))
+                  }
+                </select>
+                <Button
+                  onClick={() => {
+                    const select = document.getElementById('addMemberSelect') as HTMLSelectElement;
+                    if (select?.value) {
+                      handleAddMember(select.value);
+                      select.value = '';
+                    }
+                  }}
+                  disabled={addingMember}
+                  size="sm"
+                >
+                  <i className="ri-user-add-line mr-1"></i>
+                  {addingMember ? '...' : 'Добавить'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -330,8 +409,8 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                   <p className="font-medium text-red-700">Внимание! Это действие необратимо.</p>
                   <p>При удалении проекта произойдет:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Проект будет архивирован</li>
-                    <li>Задачи проекта станут недоступны</li>
+                    <li>Проект будет полностью удален</li>
+                    <li>Все задачи проекта будут удалены</li>
                     <li>Участники проекта потеряют доступ</li>
                   </ul>
                 </div>

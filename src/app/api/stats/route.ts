@@ -9,7 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isManager = session.role === 'MANAGER';
+    const isManager = session.role === 'PM';
 
     // Get user's projects
     let projectIds: string[];

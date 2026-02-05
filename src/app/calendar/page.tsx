@@ -190,7 +190,6 @@ interface PersonalTask {
   listId?: string;
 }
 
-const CALENDAR_STORAGE_KEY = 'calendar_events';
 const PERSONAL_TASKS_STORAGE_KEY = 'personal_tasks';
 const TASK_LISTS_STORAGE_KEY = 'task_lists';
 
@@ -234,75 +233,15 @@ const Calendar: React.FC = () => {
     category: 'Личное',
   });
 
-  // Загрузка данных из localStorage
-  const loadEvents = () => {
-    const stored = localStorage.getItem(CALENDAR_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  };
-
   const loadTasks = () => {
     const stored = localStorage.getItem(PERSONAL_TASKS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    // Инициализация с задачами по спискам
-    return [
-      {
-        id: '1',
-        title: 'Купить продукты на неделю',
-        description: 'Молоко, хлеб, овощи',
-        category: 'shopping',
-        priority: 'medium',
-        dueDate: new Date().toISOString().split('T')[0],
-        completed: false,
-        listId: '3',
-        createdAt: new Date().toISOString(),
-        userId: currentUser?.id || '',
-      },
-      {
-        id: '2',
-        title: 'Записаться к врачу',
-        description: 'Плановый осмотр',
-        category: 'personal',
-        priority: 'high',
-        dueDate: '',
-        completed: false,
-        listId: '2',
-        createdAt: new Date().toISOString(),
-        userId: currentUser?.id || '',
-      },
-      {
-        id: '3',
-        title: 'Подготовить отчет',
-        description: 'Квартальный отчет по проекту',
-        category: 'work',
-        priority: 'high',
-        dueDate: addDays(new Date(), 3).toISOString().split('T')[0],
-        completed: false,
-        listId: '4',
-        createdAt: new Date().toISOString(),
-        userId: currentUser?.id || '',
-      },
-      {
-        id: '4',
-        title: 'Позвонить родителям',
-        description: '',
-        category: 'personal',
-        priority: 'low',
-        dueDate: '',
-        completed: true,
-        listId: '1',
-        createdAt: new Date().toISOString(),
-        userId: currentUser?.id || '',
-      },
-    ];
+    if (stored) return JSON.parse(stored);
+    return [];
   };
 
   const loadTaskLists = () => {
     const stored = localStorage.getItem(TASK_LISTS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    if (stored) return JSON.parse(stored);
     return [
       { id: '1', name: 'Мои задачи', color: 'blue', isDefault: true },
       { id: '2', name: 'Личные дела', color: 'green', isDefault: false },
@@ -314,22 +253,20 @@ const Calendar: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
 
-  // Инициализация данных при загрузке компонента
+  // Загрузка событий из БД
   useEffect(() => {
-    const storedEvents = loadEvents();
-    const storedTasks = loadTasks();
-    const storedLists = loadTaskLists();
+    if (authLoading || !currentUser) return;
+    fetch('/api/calendar')
+      .then(res => res.ok ? res.json() : { events: [] })
+      .then(data => setEvents(data.events || []))
+      .catch(() => setEvents([]));
+  }, [currentUser, authLoading]);
 
-    setEvents(storedEvents);
-    setPersonalTasks(storedTasks);
-    setTaskLists(storedLists);
+  // Загрузка персональных задач и списков из localStorage
+  useEffect(() => {
+    setPersonalTasks(loadTasks());
+    setTaskLists(loadTaskLists());
   }, []);
-
-  // Функция сохранения событий
-  const saveEvents = (updatedEvents: CalendarEvent[]) => {
-    setEvents(updatedEvents);
-    localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(updatedEvents));
-  };
 
   // Функция сохранения задач
   const saveTasks = (updatedTasks: PersonalTask[]) => {
@@ -343,26 +280,34 @@ const Calendar: React.FC = () => {
     localStorage.setItem(TASK_LISTS_STORAGE_KEY, JSON.stringify(updatedLists));
   };
 
-  const handleCreateEvent = (eventData?: any) => {
+  const handleCreateEvent = async (eventData?: any) => {
     const eventToCreate = eventData || newEvent;
     if (!eventToCreate.title) return;
 
-    const event: CalendarEvent = {
-      id: Date.now().toString(),
+    const payload = {
       title: eventToCreate.title,
       description: eventToCreate.description || '',
-      startDate: eventToCreate.startDate || new Date().toISOString().split('T')[0],
-      endDate: eventToCreate.endDate || new Date().toISOString().split('T')[0],
+      startDate: eventToCreate.startDate || eventToCreate.date || new Date().toISOString().split('T')[0],
+      endDate: eventToCreate.endDate || eventToCreate.date || new Date().toISOString().split('T')[0],
       startTime: eventToCreate.startTime || '09:00',
       endTime: eventToCreate.endTime || '10:00',
-      color: eventToCreate.color || '#3B82F6',
+      color: eventToCreate.color || 'bg-sky-100 text-sky-700',
       type: eventToCreate.type || 'personal',
-      completed: false,
-      userId: currentUser?.id || '',
     };
 
-    const updatedEvents = [...events, event];
-    saveEvents(updatedEvents);
+    try {
+      const res = await fetch('/api/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEvents([...events, data.event]);
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+    }
 
     setNewEvent({
       title: '',
@@ -402,9 +347,17 @@ const Calendar: React.FC = () => {
     setShowTaskModal(false);
   };
 
-  const handleDeleteEvent = (eventId: string) => {
-    const updatedEvents = events.filter(event => event.id !== eventId);
-    saveEvents(updatedEvents);
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await fetch('/api/calendar', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: eventId }),
+      });
+      setEvents(events.filter(event => event.id !== eventId));
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
     setShowEventModal(false);
   };
 
@@ -414,11 +367,19 @@ const Calendar: React.FC = () => {
     setShowTaskModal(false);
   };
 
-  const handleToggleEventComplete = (eventId: string) => {
-    const updatedEvents = events.map(event =>
-      event.id === eventId ? { ...event, completed: !event.completed } : event
-    );
-    saveEvents(updatedEvents);
+  const handleToggleEventComplete = async (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    try {
+      await fetch('/api/calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: eventId, completed: !event.completed }),
+      });
+      setEvents(events.map(e => e.id === eventId ? { ...e, completed: !e.completed } : e));
+    } catch (error) {
+      console.error('Error toggling event:', error);
+    }
   };
 
   const handleToggleTaskComplete = (taskId: string) => {

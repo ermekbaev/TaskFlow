@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // If MANAGER, directly reassign
-    if (session.role === 'MANAGER') {
+    if (session.role === 'PM') {
       const updated = await prisma.task.update({
         where: { id: params.id },
         data: { assigneeId: newAssigneeId },

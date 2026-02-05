@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { createNotification } from '@/lib/notifications';
 
 export async function GET(request: Request) {
   try {
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
     }
 
     // USER can only see tasks from their projects or assigned to them
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       const userProjects = await prisma.projectMember.findMany({
         where: { userId: session.userId },
         select: { projectId: true },
@@ -129,6 +130,17 @@ export async function POST(request: Request) {
         reporter: { select: { id: true, name: true, email: true } },
       },
     });
+
+    // Notify assignee
+    if (assigneeId && assigneeId !== session.userId) {
+      await createNotification(
+        assigneeId,
+        'Новая задача назначена',
+        `Вам назначена задача ${key}: ${title}`,
+        'info',
+        `/project/${projectId}/board`
+      );
+    }
 
     return NextResponse.json({ task });
   } catch (error) {

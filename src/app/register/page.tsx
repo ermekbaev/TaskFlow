@@ -12,7 +12,7 @@ const Register: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'USER',
+    role: 'DEV',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -119,8 +119,8 @@ const Register: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full px-4 py-3 bg-white/80 border border-surface-200 rounded-xl text-ink focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               >
-                <option value="USER">Пользователь</option>
-                <option value="MANAGER">Менеджер</option>
+                <option value="DEV">Разработчик</option>
+                <option value="PM">PM</option>
               </select>
             </div>
 

@@ -9,7 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isManager = session.role === 'MANAGER';
+    const isManager = session.role === 'PM';
 
     const users = await prisma.user.findMany({
       where: { isActive: true },
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         name,
         email,
         password: hashedPassword,
-        role: role || 'USER',
+        role: role || 'DEV',
       },
     });
 

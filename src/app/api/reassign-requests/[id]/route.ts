@@ -12,7 +12,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

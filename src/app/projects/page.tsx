@@ -72,7 +72,7 @@ const Projects: React.FC = () => {
 
   if (authLoading || !user) return null;
 
-  const canCreateProject = user.role === 'MANAGER' || hasPermission('CREATE_PROJECT');
+  const canCreateProject = user.role === 'PM' || hasPermission('CREATE_PROJECT');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-surface-50 to-surface-100">

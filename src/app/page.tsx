@@ -52,7 +52,10 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-b border-surface-200 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div
+              className="flex items-center space-x-3 cursor-pointer"
+              onClick={() => router.push('/dashboard')}
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-soft">
                 <i className="ri-dashboard-line text-white text-xl"></i>
               </div>

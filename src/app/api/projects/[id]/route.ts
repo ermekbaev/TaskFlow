@@ -33,7 +33,7 @@ export async function GET(
     }
 
     // Check access: MANAGER can see all, USER must be a member
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       const isMember = project.members.some(m => m.userId === session.userId);
       if (!isMember) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -66,7 +66,7 @@ export async function PUT(
     }
 
     // Only MANAGER or project owner can update
-    if (session.role !== 'MANAGER' && project.ownerId !== session.userId) {
+    if (session.role !== 'PM' && project.ownerId !== session.userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -93,6 +93,39 @@ export async function PUT(
     return NextResponse.json({ project: updated });
   } catch (error) {
     console.error('Update project error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const project = await prisma.project.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if (session.role !== 'PM' && project.ownerId !== session.userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    await prisma.project.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete project error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

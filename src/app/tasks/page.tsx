@@ -25,6 +25,7 @@ const TaskList: React.FC = () => {
     priority: 'all',
     assignee: 'all',
     project: 'all',
+    myTasksOnly: true,
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -48,7 +49,7 @@ const TaskList: React.FC = () => {
         }
 
         // Fetch users for MANAGER
-        if (user.role === 'MANAGER') {
+        if (user.role === 'PM') {
           const usersRes = await fetch('/api/users');
           if (usersRes.ok) {
             const data = await usersRes.json();
@@ -67,6 +68,11 @@ const TaskList: React.FC = () => {
 
   const getFilteredTasks = () => {
     let filtered = tasks;
+
+    // "My tasks only" filter
+    if (filter.myTasksOnly && user) {
+      filtered = filtered.filter((task: any) => task.assigneeId === user.id);
+    }
 
     if (filter.status !== 'all') {
       filtered = filtered.filter((task: any) => task.status === filter.status);
@@ -145,13 +151,14 @@ const TaskList: React.FC = () => {
     'Backlog': 'bg-slate-100 text-slate-700',
     'To Do': 'bg-sky-100 text-sky-700',
     'In Progress': 'bg-amber-100 text-amber-700',
+    'Review': 'bg-purple-100 text-purple-700',
     'Done': 'bg-emerald-100 text-emerald-700',
   };
 
   if (authLoading || !user) return null;
 
   const filteredTasks = getFilteredTasks();
-  const isManager = user.role === 'MANAGER';
+  const isManager = user.role === 'PM';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-surface-50 to-surface-100">
@@ -161,10 +168,10 @@ const TaskList: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">
-              {isManager ? 'Все задачи' : 'Мои задачи'}
+              Задачи
             </h1>
             <p className="text-ink-muted mt-1">
-              {isManager ? 'Управление задачами по всем проектам' : 'Задачи ваших проектов'}
+              {filter.myTasksOnly ? 'Задачи, назначенные на вас' : 'Все доступные задачи'}
             </p>
           </div>
 
@@ -175,6 +182,34 @@ const TaskList: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-soft border border-surface-200 p-6 mb-6">
+          {/* My tasks toggle */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-surface-100">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setFilter({ ...filter, myTasksOnly: true })}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                  filter.myTasksOnly
+                    ? 'bg-primary-500 text-white shadow-soft'
+                    : 'bg-surface-100 text-ink-muted hover:bg-surface-200'
+                }`}
+              >
+                <i className="ri-user-line mr-1.5"></i>
+                Мои задачи
+              </button>
+              <button
+                onClick={() => setFilter({ ...filter, myTasksOnly: false })}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                  !filter.myTasksOnly
+                    ? 'bg-primary-500 text-white shadow-soft'
+                    : 'bg-surface-100 text-ink-muted hover:bg-surface-200'
+                }`}
+              >
+                <i className="ri-team-line mr-1.5"></i>
+                Все задачи
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <input
@@ -196,6 +231,7 @@ const TaskList: React.FC = () => {
                 <option value="Backlog">Backlog</option>
                 <option value="To Do">To Do</option>
                 <option value="In Progress">In Progress</option>
+                <option value="Review">Review</option>
                 <option value="Done">Done</option>
               </select>
             </div>
@@ -214,34 +250,32 @@ const TaskList: React.FC = () => {
               </select>
             </div>
 
-            {isManager && (
-              <>
-                <div>
-                  <select
-                    value={filter.assignee}
-                    onChange={(e) => setFilter({ ...filter, assignee: e.target.value })}
-                    className="w-full px-4 py-3 pr-8 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 transition-all"
-                  >
-                    <option value="all">Все исполнители</option>
-                    {allUsers.filter(u => u.role === 'USER').map((u: any) => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </select>
-                </div>
+            <div>
+              <select
+                value={filter.project}
+                onChange={(e) => setFilter({ ...filter, project: e.target.value })}
+                className="w-full px-4 py-3 pr-8 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 transition-all"
+              >
+                <option value="all">Все проекты</option>
+                {projects.map((project: any) => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
+              </select>
+            </div>
 
-                <div>
-                  <select
-                    value={filter.project}
-                    onChange={(e) => setFilter({ ...filter, project: e.target.value })}
-                    className="w-full px-4 py-3 pr-8 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 transition-all"
-                  >
-                    <option value="all">Все проекты</option>
-                    {projects.map((project: any) => (
-                      <option key={project.id} value={project.id}>{project.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
+            {isManager && (
+              <div>
+                <select
+                  value={filter.assignee}
+                  onChange={(e) => setFilter({ ...filter, assignee: e.target.value })}
+                  className="w-full px-4 py-3 pr-8 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 transition-all"
+                >
+                  <option value="all">Все исполнители</option>
+                  {allUsers.map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
         </div>

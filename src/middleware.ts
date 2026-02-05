@@ -61,6 +61,7 @@ export const config = {
     '/tasks/:path*',
     '/calendar/:path*',
     '/profile/:path*',
+    '/settings/:path*',
     '/admin/:path*',
     '/project/:path*',
     '/api/users/:path*',

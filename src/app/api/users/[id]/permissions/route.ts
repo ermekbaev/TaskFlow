@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -38,7 +38,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -82,7 +82,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

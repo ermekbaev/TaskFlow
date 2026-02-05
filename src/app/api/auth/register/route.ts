@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Все поля обязательны' }, { status: 400 });
     }
 
-    const validRole = role === 'MANAGER' ? 'MANAGER' : 'USER';
+    const validRole = role === 'PM' ? 'PM' : 'DEV';
 
     if (password.length < 6) {
       return NextResponse.json({ error: 'Пароль должен быть не менее 6 символов' }, { status: 400 });

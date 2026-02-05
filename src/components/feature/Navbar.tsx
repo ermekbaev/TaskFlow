@@ -16,6 +16,16 @@ interface Notification {
   actionUrl?: string;
 }
 
+const formatTime = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (diff < 60) return 'только что';
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
+  return d.toLocaleDateString('ru-RU');
+};
+
 const Navbar: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -27,7 +37,7 @@ const Navbar: React.FC = () => {
     { icon: 'ri-task-line', label: 'Задачи', path: '/tasks' },
     { icon: 'ri-calendar-line', label: 'Календарь', path: '/calendar' },
     { icon: 'ri-user-line', label: 'Профиль', path: '/profile' },
-    { icon: 'ri-settings-line', label: 'Настройки', path: '/profile' },
+    { icon: 'ri-settings-line', label: 'Настройки', path: '/settings' },
   ];
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -36,42 +46,11 @@ const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: 'Новая задача назначена',
-      message: 'Вам назначена задача APP-2: Реализовать авторизацию пользователей',
-      type: 'info',
-      time: '5 мин назад',
-      read: false,
-      details: 'Задача APP-2 назначена вам. Приоритет: Высокий.',
-      actionUrl: '/tasks',
-    },
-    {
-      id: '2',
-      title: 'Проект обновлен',
-      message: 'Статус проекта "Мобильное приложение" изменен',
-      type: 'success',
-      time: '1 час назад',
-      read: false,
-      details: 'Проект Мобильное приложение перешел в фазу активной разработки.',
-      actionUrl: '/projects',
-    },
-    {
-      id: '3',
-      title: 'Приближается дедлайн',
-      message: '2 дня до завершения спринта',
-      type: 'warning',
-      time: '2 часа назад',
-      read: true,
-      details: 'Текущий спринт завершается скоро. Обновите прогресс ваших задач.',
-      actionUrl: '/tasks',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Fetch pending reassign requests count for MANAGER
+  // Fetch pending reassign requests count for PM
   useEffect(() => {
-    if (user?.role === 'MANAGER') {
+    if (user?.role === 'PM') {
       fetch('/api/reassign-requests')
         .then(res => res.ok ? res.json() : { requests: [] })
         .then(data => setPendingCount(data.requests?.length || 0))
@@ -79,14 +58,49 @@ const Navbar: React.FC = () => {
     }
   }, [user?.role]);
 
+  // Fetch notifications from DB
+  useEffect(() => {
+    if (!user) return;
+    const fetchNotifications = () => {
+      fetch('/api/notifications')
+        .then(res => res.ok ? res.json() : { notifications: [] })
+        .then(data => {
+          const mapped = (data.notifications || []).map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type || 'info',
+            time: formatTime(n.createdAt),
+            read: n.read,
+            actionUrl: n.actionUrl,
+          }));
+          setNotifications(mapped);
+        })
+        .catch(() => setNotifications([]));
+    };
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAsRead = (id: string) => {
     setNotifications(notifications.map(n => (n.id === id ? { ...n, read: true } : n)));
+    fetch('/api/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'markRead', id }),
+    }).catch(console.error);
   };
 
   const markAllAsRead = () => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
+    fetch('/api/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'markAllRead' }),
+    }).catch(console.error);
   };
 
   const handleNotificationIconClick = (e: React.MouseEvent, notification: Notification) => {
@@ -180,9 +194,9 @@ const Navbar: React.FC = () => {
                     <div className="text-sm text-ink-light">{user.email}</div>
                     <div className="mt-1">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        user.role === 'MANAGER' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                        user.role === 'PM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                       }`}>
-                        {user.role === 'MANAGER' ? 'Менеджер' : 'Пользователь'}
+                        {user.role === 'PM' ? 'PM' : 'Разработчик'}
                       </span>
                     </div>
                   </div>
@@ -199,7 +213,7 @@ const Navbar: React.FC = () => {
                     </Link>
                   ))}
 
-                  {user.role === 'MANAGER' && (
+                  {user.role === 'PM' && (
                     <Link
                       href="/admin"
                       className="flex items-center space-x-3 px-4 py-2.5 text-sm text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"

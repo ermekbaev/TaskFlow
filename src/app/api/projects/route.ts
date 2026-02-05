@@ -11,7 +11,7 @@ export async function GET() {
 
     let projects;
 
-    if (session.role === 'MANAGER') {
+    if (session.role === 'PM') {
       projects = await prisma.project.findMany({
         include: {
           owner: { select: { id: true, name: true, email: true } },
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is MANAGER or has CREATE_PROJECT permission
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'PM') {
       const perm = await prisma.userPermission.findUnique({
         where: {
           userId_permission: {

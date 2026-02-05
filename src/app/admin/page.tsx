@@ -29,12 +29,12 @@ const AdminPanel: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    role: 'USER',
+    role: 'DEV',
   });
 
   useEffect(() => {
     if (authLoading || !user) return;
-    if (user.role !== 'MANAGER') return;
+    if (user.role !== 'PM') return;
 
     fetch('/api/users')
       .then(res => res.json())
@@ -45,7 +45,7 @@ const AdminPanel: React.FC = () => {
 
   if (authLoading || !user) return null;
 
-  if (user.role !== 'MANAGER') {
+  if (user.role !== 'PM') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-surface-50 to-surface-100 flex items-center justify-center">
         <div className="text-center">
@@ -74,7 +74,7 @@ const AdminPanel: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setUsers([...users, data.user]);
-        setNewUser({ name: '', email: '', password: '', role: 'USER' });
+        setNewUser({ name: '', email: '', password: '', role: 'DEV' });
         setShowCreateUser(false);
       }
     } catch (error) {
@@ -116,13 +116,13 @@ const AdminPanel: React.FC = () => {
   };
 
   const roleLabels: Record<string, string> = {
-    MANAGER: 'Менеджер',
-    USER: 'Пользователь',
+    PM: 'PM',
+    DEV: 'Разработчик',
   };
 
   const roleColors: Record<string, string> = {
-    MANAGER: 'bg-amber-100 text-amber-700',
-    USER: 'bg-blue-100 text-blue-700',
+    PM: 'bg-amber-100 text-amber-700',
+    DEV: 'bg-blue-100 text-blue-700',
   };
 
   return (
@@ -262,7 +262,7 @@ const AdminPanel: React.FC = () => {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm font-medium text-gray-500">Менеджеров</p>
-                    <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === 'MANAGER').length}</p>
+                    <p className="text-2xl font-bold text-gray-900">{users.filter(u => u.role === 'PM').length}</p>
                   </div>
                 </div>
               </div>
@@ -304,8 +304,8 @@ const AdminPanel: React.FC = () => {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="USER">Пользователь</option>
-              <option value="MANAGER">Менеджер</option>
+              <option value="DEV">Разработчик</option>
+              <option value="PM">PM</option>
             </select>
           </div>
 
@@ -323,7 +323,7 @@ const AdminPanel: React.FC = () => {
         {selectedUser && (
           <div className="space-y-4">
             <p className="text-sm text-ink-muted">
-              Управление гранулярными правами пользователя <strong>{selectedUser.name}</strong> ({selectedUser.role === 'MANAGER' ? 'Менеджер' : 'Пользователь'})
+              Управление гранулярными правами пользователя <strong>{selectedUser.name}</strong> ({selectedUser.role === 'PM' ? 'PM' : 'Разработчик'})
             </p>
 
             <div className="space-y-3">

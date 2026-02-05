@@ -195,7 +195,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Pending Approvals for MANAGER */}
-        {user.role === 'MANAGER' && pendingReassigns > 0 && (
+        {user.role === 'PM' && pendingReassigns > 0 && (
           <div className="mb-8">
             <PendingApprovals />
           </div>
@@ -322,7 +322,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <span className="font-medium text-ink">Календарь</span>
                 </button>
-                {user.role === 'MANAGER' && (
+                {user.role === 'PM' && (
                   <button
                     onClick={() => router.push('/admin')}
                     className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-surface-50 transition-colors text-left"
@@ -418,6 +418,55 @@ const Dashboard: React.FC = () => {
                     ></div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Per-project progress */}
+            <div className="bg-white rounded-2xl shadow-soft border border-surface-200 p-6">
+              <h2 className="text-lg font-semibold text-ink mb-4">Прогресс по проектам</h2>
+              <div className="space-y-5">
+                {projects.map(project => {
+                  const projectTasks = tasks.filter(t => t.projectId === project.id);
+                  const projectDone = projectTasks.filter(t => t.status === 'Done').length;
+                  const projectTotal = projectTasks.length;
+                  const projectPercent = projectTotal > 0 ? Math.round((projectDone / projectTotal) * 100) : 0;
+                  const projectInProgress = projectTasks.filter(t => t.status === 'In Progress').length;
+
+                  return (
+                    <div
+                      key={project.id}
+                      className="cursor-pointer hover:bg-surface-50 rounded-xl p-3 -mx-3 transition-colors"
+                      onClick={() => router.push(`/project/${project.id}/board`)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg">
+                            {project.key}
+                          </span>
+                          <span className="text-sm font-medium text-ink">{project.name}</span>
+                        </div>
+                        <span className="text-xs text-ink-muted">
+                          {projectDone}/{projectTotal} задач
+                        </span>
+                      </div>
+                      <div className="h-2 bg-surface-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full transition-all duration-500"
+                          style={{ width: `${projectPercent}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-xs text-ink-light">
+                          {projectInProgress > 0 && `${projectInProgress} в работе`}
+                        </span>
+                        <span className="text-xs font-medium text-primary-600">{projectPercent}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {projects.length === 0 && (
+                  <p className="text-sm text-ink-muted text-center py-4">Нет проектов</p>
+                )}
               </div>
             </div>
           </div>

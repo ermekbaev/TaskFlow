@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role: role || 'USER' }),
+      body: JSON.stringify({ name, email, password, role: role || 'DEV' }),
     });
 
     const data = await res.json();
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    if (user.role === 'MANAGER') return true;
+    if (user.role === 'PM') return true;
     return user.permissions.includes(permission);
   };
 
