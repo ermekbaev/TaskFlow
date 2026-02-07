@@ -48,6 +48,7 @@ model Project {
   description String   @default("")
   ownerId     String
   status      String   @default("Active")
+  color       String   @default("#3B82F6")
   createdAt   DateTime @default(now())
 
   owner   User            @relation("ProjectOwner", fields: [ownerId], references: [id])
@@ -79,9 +80,13 @@ model Task {
   reporterId  String
   labels      String   @default("[]")
   storyPoints Int      @default(0)
-  dueDate     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  dueDate        String?
+  startDate      String?
+  progress       Int      @default(0)
+  estimatedHours Int      @default(0)
+  actualHours    Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee         User?             @relation("TaskAssignee", fields: [assigneeId], references: [id])

@@ -35,6 +35,7 @@ const Navbar: React.FC = () => {
     { icon: 'ri-dashboard-3-line', label: 'Главная', path: '/dashboard' },
     { icon: 'ri-folder-line', label: 'Проекты', path: '/projects' },
     { icon: 'ri-task-line', label: 'Задачи', path: '/tasks' },
+    { icon: 'ri-bar-chart-horizontal-line', label: 'Гант', path: '/gantt' },
     { icon: 'ri-calendar-line', label: 'Календарь', path: '/calendar' },
     { icon: 'ri-user-line', label: 'Профиль', path: '/profile' },
     { icon: 'ri-settings-line', label: 'Настройки', path: '/settings' },
@@ -152,7 +153,7 @@ const Navbar: React.FC = () => {
             </Link>
 
             <div className="hidden md:flex items-center space-x-6">
-              {menuItems.slice(0, 4).map((item) => (
+              {menuItems.slice(0, 5).map((item) => (
                 <Link
                   key={item.path + item.label}
                   href={item.path}
@@ -201,7 +202,7 @@ const Navbar: React.FC = () => {
                     </div>
                   </div>
 
-                  {menuItems.slice(4).map((item) => (
+                  {menuItems.slice(5).map((item) => (
                     <Link
                       key={item.path + item.label}
                       href={item.path}
