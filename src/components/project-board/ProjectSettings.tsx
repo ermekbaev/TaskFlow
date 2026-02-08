@@ -44,6 +44,8 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
   const [members, setMembers] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [addingMember, setAddingMember] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState('');
+  const [inviteError, setInviteError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showReworkConfirm, setShowReworkConfirm] = useState(false);
@@ -107,20 +109,29 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     }
   };
 
-  const handleAddMember = async (userId: string) => {
+  const handleInviteMember = async (userId: string) => {
     setAddingMember(true);
+    setInviteSuccess('');
+    setInviteError('');
     try {
-      const res = await fetch(`/api/projects/${project.id}/members`, {
+      const res = await fetch('/api/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, roleInProject: 'DEV' }),
+        body: JSON.stringify({ projectId: project.id, userId, role: 'DEV' }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        setMembers([...members, data.member]);
+        const user = allUsers.find(u => u.id === userId);
+        setInviteSuccess(`Приглашение отправлено: ${user?.name || 'пользователь'}`);
+        setTimeout(() => setInviteSuccess(''), 3000);
+      } else {
+        setInviteError(data.error || 'Ошибка отправки приглашения');
+        setTimeout(() => setInviteError(''), 3000);
       }
     } catch (error) {
-      console.error('Error adding member:', error);
+      console.error('Error inviting member:', error);
+      setInviteError('Ошибка сервера');
+      setTimeout(() => setInviteError(''), 3000);
     } finally {
       setAddingMember(false);
     }
@@ -277,9 +288,9 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
               )}
             </div>
 
-            {/* Добавление участника */}
+            {/* Приглашение участника */}
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Добавить участника</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Пригласить участника</label>
               <div className="flex space-x-2">
                 <select
                   id="addMemberSelect"
@@ -298,17 +309,27 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                   onClick={() => {
                     const select = document.getElementById('addMemberSelect') as HTMLSelectElement;
                     if (select?.value) {
-                      handleAddMember(select.value);
+                      handleInviteMember(select.value);
                       select.value = '';
                     }
                   }}
                   disabled={addingMember}
                   size="sm"
                 >
-                  <i className="ri-user-add-line mr-1"></i>
-                  {addingMember ? '...' : 'Добавить'}
+                  <i className="ri-mail-send-line mr-1"></i>
+                  {addingMember ? '...' : 'Пригласить'}
                 </Button>
               </div>
+              {inviteSuccess && (
+                <p className="mt-2 text-sm text-emerald-600 flex items-center">
+                  <i className="ri-check-line mr-1"></i>{inviteSuccess}
+                </p>
+              )}
+              {inviteError && (
+                <p className="mt-2 text-sm text-red-600 flex items-center">
+                  <i className="ri-error-warning-line mr-1"></i>{inviteError}
+                </p>
+              )}
             </div>
           </div>
         </div>

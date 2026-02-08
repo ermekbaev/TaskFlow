@@ -26,6 +26,8 @@ model User {
   reviewedRequests ReassignRequest[]  @relation("ReassignReviewer")
   notifications    Notification[]
   calendarEvents   CalendarEvent[]
+  sentInvitations     ProjectInvitation[] @relation("InvitationSender")
+  receivedInvitations ProjectInvitation[] @relation("InvitationReceiver")
 }
 
 model UserPermission {
@@ -51,9 +53,10 @@ model Project {
   color       String   @default("#3B82F6")
   createdAt   DateTime @default(now())
 
-  owner   User            @relation("ProjectOwner", fields: [ownerId], references: [id])
-  members ProjectMember[]
-  tasks   Task[]
+  owner       User                @relation("ProjectOwner", fields: [ownerId], references: [id])
+  members     ProjectMember[]
+  tasks       Task[]
+  invitations ProjectInvitation[]
 }
 
 model ProjectMember {
@@ -121,6 +124,23 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model ProjectInvitation {
+  id          String   @id @default(cuid())
+  projectId   String
+  invitedById String
+  invitedId   String
+  role        String   @default("DEV")
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  respondedAt DateTime?
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invitedBy User    @relation("InvitationSender", fields: [invitedById], references: [id])
+  invited   User    @relation("InvitationReceiver", fields: [invitedId], references: [id])
+
+  @@unique([projectId, invitedId, status])
 }
 
 model CalendarEvent {

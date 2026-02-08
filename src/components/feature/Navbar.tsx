@@ -30,6 +30,7 @@ const Navbar: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
+  const [invitationCount, setInvitationCount] = useState(0);
 
   const menuItems = [
     { icon: 'ri-dashboard-3-line', label: 'Главная', path: '/dashboard' },
@@ -58,6 +59,20 @@ const Navbar: React.FC = () => {
         .catch(() => setPendingCount(0));
     }
   }, [user?.role]);
+
+  // Fetch pending invitations count
+  useEffect(() => {
+    if (!user) return;
+    const fetchInvitations = () => {
+      fetch('/api/invitations')
+        .then(res => res.ok ? res.json() : { invitations: [] })
+        .then(data => setInvitationCount(data.invitations?.length || 0))
+        .catch(() => setInvitationCount(0));
+    };
+    fetchInvitations();
+    const interval = setInterval(fetchInvitations, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Fetch notifications from DB
   useEffect(() => {
@@ -245,6 +260,19 @@ const Navbar: React.FC = () => {
                 </div>
               )}
             </div>
+
+            <button
+              onClick={() => router.push('/invitations')}
+              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer relative"
+              title="Приглашения"
+            >
+              <i className="ri-mail-line text-xl"></i>
+              {invitationCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {invitationCount > 9 ? '9+' : invitationCount}
+                </span>
+              )}
+            </button>
 
             <div className="relative">
               <button

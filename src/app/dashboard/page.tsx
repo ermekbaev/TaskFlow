@@ -48,6 +48,7 @@ const Dashboard: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pendingReassigns, setPendingReassigns] = useState(0);
+  const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,10 +57,11 @@ const Dashboard: React.FC = () => {
 
     const fetchData = async () => {
       try {
-        const [statsRes, tasksRes, projectsRes] = await Promise.all([
+        const [statsRes, tasksRes, projectsRes, invRes] = await Promise.all([
           fetch('/api/stats'),
           fetch('/api/tasks'),
           fetch('/api/projects'),
+          fetch('/api/invitations'),
         ]);
 
         if (statsRes.ok) {
@@ -74,6 +76,10 @@ const Dashboard: React.FC = () => {
         if (projectsRes.ok) {
           const data = await projectsRes.json();
           setProjects(data.projects);
+        }
+        if (invRes.ok) {
+          const data = await invRes.json();
+          setInvitations(data.invitations || []);
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -193,6 +199,48 @@ const Dashboard: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Pending Invitations */}
+        {invitations.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <i className="ri-mail-line text-emerald-600 text-xl"></i>
+                  <h2 className="text-lg font-semibold text-emerald-700">
+                    Приглашения ({invitations.length})
+                  </h2>
+                </div>
+                <button
+                  onClick={() => router.push('/invitations')}
+                  className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                >
+                  Смотреть все
+                </button>
+              </div>
+              <div className="space-y-3">
+                {invitations.slice(0, 3).map((inv: any) => (
+                  <div
+                    key={inv.id}
+                    className="bg-white rounded-xl p-4 flex items-center justify-between cursor-pointer hover:shadow-soft transition-shadow"
+                    onClick={() => router.push('/invitations')}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                        <span className="text-emerald-700 text-xs font-bold">{inv.project.key}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-ink">{inv.project.name}</p>
+                        <p className="text-sm text-ink-light">от {inv.invitedBy.name}</p>
+                      </div>
+                    </div>
+                    <i className="ri-arrow-right-s-line text-ink-light"></i>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pending Approvals for MANAGER */}
         {user.role === 'PM' && pendingReassigns > 0 && (
