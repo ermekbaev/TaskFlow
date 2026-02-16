@@ -6,6 +6,12 @@ import { AuthProvider } from '@/contexts/AuthContext';
 export const metadata: Metadata = {
   title: 'TaskFlow - Project Management',
   description: 'Система управления IT-проектами',
+  icons: {
+    icon: '/icon.svg',
+  },
+  themeColor: '#6366f1',
+  applicationName: 'TaskFlow',
+  keywords: ['project management', 'task management', 'kanban', 'team collaboration'],
 };
 
 export default function RootLayout({
