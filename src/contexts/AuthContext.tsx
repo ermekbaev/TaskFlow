@@ -31,23 +31,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Helper для сохранения пользователя
+  const saveUser = (userData: User) => {
+    setUser(userData);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('taskflow_user', JSON.stringify(userData));
+    }
+  };
+
+  // Helper для удаления пользователя
+  const clearUser = () => {
+    setUser(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('taskflow_user');
+    }
+  };
+
   const fetchUser = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user);
+        saveUser(data.user);
       } else {
-        setUser(null);
+        clearUser();
       }
     } catch {
-      setUser(null);
+      clearUser();
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Загружаем пользователя из localStorage при инициализации
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cachedUser = localStorage.getItem('taskflow_user');
+      if (cachedUser) {
+        try {
+          setUser(JSON.parse(cachedUser));
+        } catch {
+          localStorage.removeItem('taskflow_user');
+        }
+      }
+    }
     fetchUser();
   }, [fetchUser]);
 
@@ -73,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(data.error || 'Ошибка входа');
     }
 
-    setUser(data.user);
+    saveUser(data.user);
     router.push('/dashboard');
   };
 
@@ -90,13 +117,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(data.error || 'Ошибка регистрации');
     }
 
-    setUser(data.user);
+    saveUser(data.user);
     router.push('/dashboard');
   };
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
+    clearUser();
     router.push('/login');
   };
 

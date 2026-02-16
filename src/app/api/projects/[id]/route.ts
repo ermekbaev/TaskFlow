@@ -23,7 +23,15 @@ export async function GET(
           include: {
             assignee: { select: { id: true, name: true, email: true } },
             reporter: { select: { id: true, name: true, email: true } },
+            children: { select: { id: true, key: true, title: true, status: true, taskType: true } },
+            assignees: {
+              include: { user: { select: { id: true, name: true, email: true } } },
+            },
           },
+        },
+        attachments: {
+          include: { uploadedBy: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -71,7 +79,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, status, key } = body;
+    const {
+      name, description, status, key,
+      contractNumber, contractSignDate, contractEndDate,
+      rate, contractAmount, externalLaborCost, internalLaborCost,
+    } = body;
 
     const updated = await prisma.project.update({
       where: { id: params.id },
@@ -80,11 +92,22 @@ export async function PUT(
         ...(description !== undefined && { description }),
         ...(status && { status }),
         ...(key && { key }),
+        ...(contractNumber !== undefined && { contractNumber: contractNumber || null }),
+        ...(contractSignDate !== undefined && { contractSignDate: contractSignDate || null }),
+        ...(contractEndDate !== undefined && { contractEndDate: contractEndDate || null }),
+        ...(rate !== undefined && { rate: rate ? parseFloat(rate) : null }),
+        ...(contractAmount !== undefined && { contractAmount: contractAmount ? parseFloat(contractAmount) : null }),
+        ...(externalLaborCost !== undefined && { externalLaborCost: externalLaborCost ? parseFloat(externalLaborCost) : null }),
+        ...(internalLaborCost !== undefined && { internalLaborCost: internalLaborCost ? parseFloat(internalLaborCost) : null }),
       },
       include: {
         owner: { select: { id: true, name: true, email: true } },
         members: {
           include: { user: { select: { id: true, name: true, email: true } } },
+        },
+        attachments: {
+          include: { uploadedBy: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'desc' },
         },
         _count: { select: { tasks: true } },
       },

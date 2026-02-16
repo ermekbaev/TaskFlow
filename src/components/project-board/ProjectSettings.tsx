@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/base/Modal';
 import Button from '@/components/base/Button';
 import Input from '@/components/base/Input';
+import FileUpload from '@/components/base/FileUpload';
 
 interface Project {
   id: string;
@@ -13,6 +14,14 @@ interface Project {
   description: string;
   ownerId: string;
   status: string;
+  contractNumber?: string;
+  contractSignDate?: string;
+  contractEndDate?: string;
+  rate?: number;
+  contractAmount?: number;
+  externalLaborCost?: number;
+  internalLaborCost?: number;
+  attachments?: any[];
   members: Array<{
     projectId: string;
     userId: string;
@@ -39,6 +48,13 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
     name: project.name,
     description: project.description,
     key: project.key,
+    contractNumber: project.contractNumber || '',
+    contractSignDate: project.contractSignDate || '',
+    contractEndDate: project.contractEndDate || '',
+    rate: project.rate?.toString() || '',
+    contractAmount: project.contractAmount?.toString() || '',
+    externalLaborCost: project.externalLaborCost?.toString() || '',
+    internalLaborCost: project.internalLaborCost?.toString() || '',
   });
 
   const [members, setMembers] = useState<any[]>([]);
@@ -49,6 +65,7 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showReworkConfirm, setShowReworkConfirm] = useState(false);
+  const [attachments, setAttachments] = useState<any[]>(project.attachments || []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,6 +77,11 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
       .then(res => res.json())
       .then(data => setAllUsers(data.users || []))
       .catch(console.error);
+    // Load attachments
+    fetch(`/api/upload?projectId=${project.id}`)
+      .then(res => res.json())
+      .then(data => setAttachments(data.attachments || []))
+      .catch(console.error);
   }, [isOpen, project.id]);
 
   useEffect(() => {
@@ -67,7 +89,15 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
       name: project.name,
       description: project.description,
       key: project.key,
+      contractNumber: project.contractNumber || '',
+      contractSignDate: project.contractSignDate || '',
+      contractEndDate: project.contractEndDate || '',
+      rate: project.rate?.toString() || '',
+      contractAmount: project.contractAmount?.toString() || '',
+      externalLaborCost: project.externalLaborCost?.toString() || '',
+      internalLaborCost: project.internalLaborCost?.toString() || '',
     });
+    setAttachments(project.attachments || []);
   }, [project]);
 
   const handleSaveProject = async () => {
@@ -75,7 +105,18 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
       const res = await fetch(`/api/projects/${project.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectData),
+        body: JSON.stringify({
+          name: projectData.name,
+          description: projectData.description,
+          key: projectData.key,
+          contractNumber: projectData.contractNumber || null,
+          contractSignDate: projectData.contractSignDate || null,
+          contractEndDate: projectData.contractEndDate || null,
+          rate: projectData.rate || null,
+          contractAmount: projectData.contractAmount || null,
+          externalLaborCost: projectData.externalLaborCost || null,
+          internalLaborCost: projectData.internalLaborCost || null,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -168,8 +209,8 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="Настройки проекта" size="md">
-        <div className="space-y-6">
+      <Modal isOpen={isOpen} onClose={onClose} title="Настройки проекта" size="lg">
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
           {/* Основные настройки */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Основные настройки</h3>
@@ -197,16 +238,98 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
                   onChange={(e) =>
                     setProjectData({ ...projectData, description: e.target.value })
                   }
-                  rows={4}
+                  rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-
-              <Button onClick={handleSaveProject}>
-                Сохранить изменения
-              </Button>
             </div>
           </div>
+
+          {/* Данные договора */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <i className="ri-file-text-line mr-2"></i>
+              Данные договора
+            </h3>
+            <div className="space-y-4">
+              <Input
+                label="Номер договора"
+                value={projectData.contractNumber}
+                onChange={(e) => setProjectData({ ...projectData, contractNumber: e.target.value })}
+                placeholder="Например: ДГ-2025/001"
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Дата подписания"
+                  type="date"
+                  value={projectData.contractSignDate}
+                  onChange={(e) => setProjectData({ ...projectData, contractSignDate: e.target.value })}
+                />
+                <Input
+                  label="Дата окончания"
+                  type="date"
+                  value={projectData.contractEndDate}
+                  onChange={(e) => setProjectData({ ...projectData, contractEndDate: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Ставка (руб/час)"
+                  type="number"
+                  value={projectData.rate}
+                  onChange={(e) => setProjectData({ ...projectData, rate: e.target.value })}
+                  placeholder="0"
+                />
+                <Input
+                  label="Сумма контракта"
+                  type="number"
+                  value={projectData.contractAmount}
+                  onChange={(e) => setProjectData({ ...projectData, contractAmount: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Внешние трудозатраты (ч)"
+                  type="number"
+                  value={projectData.externalLaborCost}
+                  onChange={(e) => setProjectData({ ...projectData, externalLaborCost: e.target.value })}
+                  placeholder="0"
+                />
+                <Input
+                  label="Внутренние трудозатраты (ч)"
+                  type="number"
+                  value={projectData.internalLaborCost}
+                  onChange={(e) => setProjectData({ ...projectData, internalLaborCost: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Вложения проекта */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <i className="ri-attachment-line mr-2"></i>
+              Документы проекта
+            </h3>
+            <FileUpload
+              projectId={project.id}
+              category="contract"
+              attachments={attachments}
+              onUpload={(att) => setAttachments([att, ...attachments])}
+              onDelete={(id) => setAttachments(attachments.filter(a => a.id !== id))}
+              label=""
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+            />
+          </div>
+
+          <Button onClick={handleSaveProject} className="w-full">
+            Сохранить изменения
+          </Button>
 
           {/* Управление проектом */}
           <div className="border-t pt-6">

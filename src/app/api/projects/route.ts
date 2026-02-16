@@ -9,34 +9,23 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let projects;
-
-    if (session.role === 'PM') {
-      projects = await prisma.project.findMany({
-        include: {
-          owner: { select: { id: true, name: true, email: true } },
-          members: {
-            include: { user: { select: { id: true, name: true, email: true } } },
-          },
-          _count: { select: { tasks: true } },
+    // Пользователь видит только проекты, где он владелец или участник
+    const projects = await prisma.project.findMany({
+      where: {
+        OR: [
+          { ownerId: session.userId },
+          { members: { some: { userId: session.userId } } },
+        ],
+      },
+      include: {
+        owner: { select: { id: true, name: true, email: true } },
+        members: {
+          include: { user: { select: { id: true, name: true, email: true } } },
         },
-        orderBy: { createdAt: 'desc' },
-      });
-    } else {
-      projects = await prisma.project.findMany({
-        where: {
-          members: { some: { userId: session.userId } },
-        },
-        include: {
-          owner: { select: { id: true, name: true, email: true } },
-          members: {
-            include: { user: { select: { id: true, name: true, email: true } } },
-          },
-          _count: { select: { tasks: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-    }
+        _count: { select: { tasks: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return NextResponse.json({ projects });
   } catch (error) {
@@ -67,7 +56,11 @@ export async function POST(request: Request) {
       }
     }
 
-    const { name, key, description } = await request.json();
+    const {
+      name, key, description,
+      contractNumber, contractSignDate, contractEndDate,
+      rate, contractAmount, externalLaborCost, internalLaborCost,
+    } = await request.json();
 
     if (!name || !key) {
       return NextResponse.json({ error: 'Название и ключ обязательны' }, { status: 400 });
@@ -84,6 +77,13 @@ export async function POST(request: Request) {
         key: key.toUpperCase(),
         description: description || '',
         ownerId: session.userId,
+        contractNumber: contractNumber || null,
+        contractSignDate: contractSignDate || null,
+        contractEndDate: contractEndDate || null,
+        rate: rate ? parseFloat(rate) : null,
+        contractAmount: contractAmount ? parseFloat(contractAmount) : null,
+        externalLaborCost: externalLaborCost ? parseFloat(externalLaborCost) : null,
+        internalLaborCost: internalLaborCost ? parseFloat(internalLaborCost) : null,
         members: {
           create: {
             userId: session.userId,

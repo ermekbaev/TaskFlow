@@ -12,6 +12,11 @@ export async function GET() {
     const events = await prisma.calendarEvent.findMany({
       where: { userId: session.userId },
       orderBy: { startDate: 'asc' },
+      include: {
+        attachments: {
+          select: { id: true, fileName: true, filePath: true, fileSize: true, mimeType: true, category: true, createdAt: true }
+        }
+      }
     });
 
     return NextResponse.json({ events });
@@ -28,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, description, startDate, endDate, startTime, endTime, color, type } = await req.json();
+    const { title, description, startDate, endDate, startTime, endTime, color, type, reminderTime } = await req.json();
 
     if (!title || !startDate || !endDate) {
       return NextResponse.json({ error: 'title, startDate, endDate обязательны' }, { status: 400 });
@@ -45,6 +50,7 @@ export async function POST(req: NextRequest) {
         endTime: endTime || '10:00',
         color: color || 'bg-sky-100 text-sky-700',
         type: type || 'personal',
+        reminderTime: reminderTime || null,
       },
     });
 
@@ -62,7 +68,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, title, description, startDate, endDate, startTime, endTime, color, type, completed } = await req.json();
+    const { id, title, description, startDate, endDate, startTime, endTime, color, type, completed, reminderTime, reminderSent } = await req.json();
 
     if (!id) {
       return NextResponse.json({ error: 'id обязателен' }, { status: 400 });
@@ -85,6 +91,8 @@ export async function PUT(req: NextRequest) {
         ...(color !== undefined && { color }),
         ...(type !== undefined && { type }),
         ...(completed !== undefined && { completed }),
+        ...(reminderTime !== undefined && { reminderTime }),
+        ...(reminderSent !== undefined && { reminderSent }),
       },
     });
 

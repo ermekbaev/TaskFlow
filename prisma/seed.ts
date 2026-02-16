@@ -165,7 +165,7 @@ async function main() {
         assigneeId: maria.id,
         reporterId: angelina.id,
         labels: JSON.stringify(['design', 'ui']),
-        storyPoints: 5,
+        expectedHours: 10,
         dueDate: '2024-03-15',
       },
       {
@@ -179,7 +179,7 @@ async function main() {
         assigneeId: dmitry.id,
         reporterId: angelina.id,
         labels: JSON.stringify(['backend', 'auth']),
-        storyPoints: 8,
+        expectedHours: 16,
         dueDate: '2024-03-20',
       },
       {
@@ -193,7 +193,7 @@ async function main() {
         assigneeId: maria.id,
         reporterId: angelina.id,
         labels: JSON.stringify(['devops', 'deployment']),
-        storyPoints: 13,
+        expectedHours: 24,
         dueDate: '2024-03-25',
       },
       {
@@ -207,7 +207,7 @@ async function main() {
         assigneeId: maria.id,
         reporterId: angelina.id,
         labels: JSON.stringify(['database', 'backend']),
-        storyPoints: 8,
+        expectedHours: 16,
         dueDate: '2024-04-01',
       },
       {
@@ -221,7 +221,7 @@ async function main() {
         assigneeId: dmitry.id,
         reporterId: angelina.id,
         labels: JSON.stringify(['testing', 'quality']),
-        storyPoints: 5,
+        expectedHours: 10,
         dueDate: '2024-03-30',
       },
     ],

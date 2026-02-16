@@ -14,6 +14,8 @@ export async function GET(request: Request) {
     const projectId = searchParams.get('projectId');
     const status = searchParams.get('status');
     const assigneeId = searchParams.get('assigneeId');
+    const parentId = searchParams.get('parentId');
+    const taskType = searchParams.get('taskType');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
@@ -28,6 +30,14 @@ export async function GET(request: Request) {
 
     if (assigneeId) {
       where.assigneeId = assigneeId;
+    }
+
+    if (parentId) {
+      where.parentId = parentId;
+    }
+
+    if (taskType) {
+      where.taskType = taskType;
     }
 
     // USER can only see tasks from their projects or assigned to them
@@ -50,6 +60,16 @@ export async function GET(request: Request) {
         project: { select: { id: true, key: true, name: true } },
         assignee: { select: { id: true, name: true, email: true } },
         reporter: { select: { id: true, name: true, email: true } },
+        parent: { select: { id: true, key: true, title: true, taskType: true } },
+        children: {
+          select: { id: true, key: true, title: true, status: true, taskType: true, expectedHours: true, actualHours: true },
+        },
+        assignees: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
+        attachments: {
+          select: { id: true, fileName: true, filePath: true, fileSize: true, mimeType: true, category: true, createdAt: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -68,7 +88,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { projectId, title, description, status, priority, assigneeId, labels, storyPoints, dueDate } = await request.json();
+    const {
+      projectId, title, description, status, priority, assigneeId, labels,
+      dueDate, startDate, assignmentDate, expectedHours, actualHours,
+      taskType, parentId,
+      // Parent task fields
+      initiatorName, initiatorEmail, initiatorPosition,
+      curatorName, curatorEmail, curatorPosition,
+      acceptanceStatus, customDates,
+      // Recurring fields
+      isRecurring, recurrencePattern, recurrenceDays,
+      // Multiple assignees
+      assigneeIds,
+    } = await request.json();
 
     if (!projectId || !title) {
       return NextResponse.json({ error: 'projectId and title are required' }, { status: 400 });
@@ -121,13 +153,70 @@ export async function POST(request: Request) {
         assigneeId: assigneeId || null,
         reporterId: session.userId,
         labels: labels ? JSON.stringify(labels) : '[]',
-        storyPoints: storyPoints || 0,
         dueDate: dueDate || null,
+        startDate: startDate || null,
+        assignmentDate: assignmentDate || null,
+        expectedHours: expectedHours ? parseFloat(expectedHours) : 0,
+        actualHours: actualHours ? parseFloat(actualHours) : 0,
+        taskType: taskType || 'task',
+        parentId: parentId || null,
+        // Parent task fields
+        initiatorName: initiatorName || null,
+        initiatorEmail: initiatorEmail || null,
+        initiatorPosition: initiatorPosition || null,
+        curatorName: curatorName || null,
+        curatorEmail: curatorEmail || null,
+        curatorPosition: curatorPosition || null,
+        acceptanceStatus: acceptanceStatus || null,
+        customDates: customDates ? JSON.stringify(customDates) : '[]',
+        // Recurring fields
+        isRecurring: isRecurring || false,
+        recurrencePattern: recurrencePattern || null,
+        recurrenceDays: recurrenceDays ? JSON.stringify(recurrenceDays) : null,
+        // Multiple assignees
+        ...(assigneeIds && assigneeIds.length > 0 ? {
+          assignees: {
+            create: assigneeIds.map((uid: string) => ({ userId: uid })),
+          },
+        } : {}),
       },
       include: {
         project: { select: { id: true, key: true, name: true } },
         assignee: { select: { id: true, name: true, email: true } },
         reporter: { select: { id: true, name: true, email: true } },
+        parent: { select: { id: true, key: true, title: true, taskType: true } },
+        children: {
+          select: { id: true, key: true, title: true, status: true, taskType: true },
+        },
+        assignees: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
+        attachments: {
+          select: { id: true, fileName: true, filePath: true, fileSize: true, mimeType: true, category: true, createdAt: true },
+        },
+      },
+    });
+
+    // Auto-add additional assignees as project members
+    if (assigneeIds && assigneeIds.length > 0) {
+      for (const uid of assigneeIds) {
+        const existingMember = await prisma.projectMember.findUnique({
+          where: { projectId_userId: { projectId, userId: uid } },
+        });
+        if (!existingMember) {
+          await prisma.projectMember.create({
+            data: { projectId, userId: uid, roleInProject: 'DEV' },
+          });
+        }
+      }
+    }
+
+    // Record task creation in activity log
+    await prisma.taskActivity.create({
+      data: {
+        taskId: task.id,
+        userId: session.userId,
+        type: 'created',
       },
     });
 

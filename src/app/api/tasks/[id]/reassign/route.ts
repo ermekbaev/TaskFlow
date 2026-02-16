@@ -57,6 +57,18 @@ export async function POST(
           reporter: { select: { id: true, name: true, email: true } },
         },
       });
+      // Record reassignment in activity log
+      await prisma.taskActivity.create({
+        data: {
+          taskId: params.id,
+          userId: session.userId,
+          type: 'reassign',
+          comment: comment || null,
+          oldValue: task.assigneeId || '',
+          newValue: newAssigneeId,
+        },
+      });
+
       return NextResponse.json({ task: updated, directReassign: true });
     }
 

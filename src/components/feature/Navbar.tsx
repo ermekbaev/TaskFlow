@@ -28,6 +28,7 @@ const formatTime = (dateStr: string) => {
 
 const Navbar: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   const [invitationCount, setInvitationCount] = useState(0);
@@ -157,54 +158,66 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-white/80 backdrop-blur-xl border-b border-surface-200 sticky top-0 z-50 shadow-soft">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-4 xl:px-6">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link href="/dashboard" className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-soft">
-                <i className="ri-dashboard-line text-white text-lg"></i>
+          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 xl:space-x-8">
+            <Link href="/dashboard" className="flex items-center space-x-2">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg sm:rounded-xl flex items-center justify-center shadow-soft flex-shrink-0">
+                <i className="ri-dashboard-line text-white text-base sm:text-lg"></i>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">TaskFlow</span>
+              <span className="hidden sm:inline xl:inline text-base xl:text-xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent whitespace-nowrap">TaskFlow</span>
             </Link>
 
-            <div className="hidden md:flex items-center space-x-6">
-              {menuItems.slice(0, 5).map((item) => (
-                <Link
-                  key={item.path + item.label}
-                  href={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                    pathname === item.path
-                      ? 'bg-primary-50 text-primary-700 shadow-soft'
-                      : 'text-ink-muted hover:text-ink hover:bg-surface-100'
-                  }`}
-                >
-                  <i className={item.icon}></i>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+            {/* Desktop & Tablet Navigation with horizontal scroll */}
+            <div className="hidden md:flex items-center overflow-x-auto scrollbar-hide max-w-[40vw] xl:max-w-none">
+              <div className="flex items-center space-x-1.5 xl:space-x-4">
+                {menuItems.slice(0, 5).map((item) => (
+                  <Link
+                    key={item.path + item.label}
+                    href={item.path}
+                    className={`flex items-center justify-center xl:justify-start space-x-0 xl:space-x-2 px-2.5 xl:px-4 py-2 xl:py-2.5 rounded-lg xl:rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                      pathname === item.path
+                        ? 'bg-primary-50 text-primary-700 shadow-soft'
+                        : 'text-ink-muted hover:text-ink hover:bg-surface-100'
+                    }`}
+                    title={item.label}
+                  >
+                    <i className={`${item.icon} text-base xl:text-lg`}></i>
+                    <span className="hidden xl:inline">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 xl:space-x-4">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 cursor-pointer"
+            >
+              <i className={`${isMobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'} text-2xl`}></i>
+            </button>
+
+            <div className="relative hidden md:block">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center space-x-3 p-2 rounded-xl hover:bg-surface-100 transition-all duration-200 cursor-pointer"
+                className="flex items-center space-x-1.5 xl:space-x-3 p-1.5 xl:p-2 rounded-lg xl:rounded-xl hover:bg-surface-100 transition-all duration-200 cursor-pointer"
               >
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-soft">
-                  <span className="text-white text-sm font-medium">
+                <div className="w-8 h-8 xl:w-9 xl:h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg xl:rounded-xl flex items-center justify-center shadow-soft flex-shrink-0">
+                  <span className="text-white text-xs xl:text-sm font-medium">
                     {user.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div className="hidden md:block text-left">
-                  <div className="text-sm font-semibold text-ink">{user.name}</div>
-                  <div className="text-xs text-ink-light">{user.email}</div>
+                <div className="hidden xl:block text-left">
+                  <div className="text-sm font-semibold text-ink truncate max-w-[120px]">{user.name}</div>
+                  <div className="text-xs text-ink-light truncate max-w-[120px]">{user.email}</div>
                 </div>
-                <i className="ri-arrow-down-s-line text-gray-400"></i>
+                <i className="ri-arrow-down-s-line text-gray-400 hidden xl:inline"></i>
               </button>
 
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-elevated border border-surface-200 py-3 z-50">
+                <div className="absolute right-0 mt-3 w-56 sm:w-64 bg-white rounded-2xl shadow-elevated border border-surface-200 py-3 z-50">
                   <div className="px-4 py-3 border-b border-surface-200">
                     <div className="text-sm font-semibold text-ink">{user.name}</div>
                     <div className="text-sm text-ink-light">{user.email}</div>
@@ -263,32 +276,32 @@ const Navbar: React.FC = () => {
 
             <button
               onClick={() => router.push('/invitations')}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer relative"
+              className="hidden md:flex w-8 h-8 items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer relative flex-shrink-0"
               title="Приглашения"
             >
-              <i className="ri-mail-line text-xl"></i>
+              <i className="ri-mail-line text-lg xl:text-xl"></i>
               {invitationCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 xl:w-5 xl:h-5 bg-emerald-500 text-white text-[10px] xl:text-xs rounded-full flex items-center justify-center">
                   {invitationCount > 9 ? '9+' : invitationCount}
                 </span>
               )}
             </button>
 
-            <div className="relative">
+            <div className="relative hidden md:block">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer relative"
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer relative flex-shrink-0"
               >
-                <i className="ri-notification-line text-xl"></i>
+                <i className="ri-notification-line text-lg xl:text-xl"></i>
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 xl:w-5 xl:h-5 bg-red-500 text-white text-[10px] xl:text-xs rounded-full flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-elevated border border-surface-200 z-50 overflow-hidden">
+                <div className="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-96 max-w-md bg-white rounded-2xl shadow-elevated border border-surface-200 z-50 overflow-hidden">
                   <div className="p-4 border-b border-surface-200 bg-surface-50">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-ink">Уведомления</h3>
@@ -362,18 +375,91 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {showNotificationDetail && selectedNotification && (
-        <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-elevated max-w-md w-full mx-4 border border-surface-200">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-surface-200 bg-white">
+          <div className="max-w-7xl mx-auto px-3 py-4 space-y-2">
+            {menuItems.map((item) => (
+              <Link
+                key={item.path + item.label}
+                href={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                  pathname === item.path
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-ink-muted hover:bg-surface-100'
+                }`}
+              >
+                <i className={`${item.icon} text-lg`}></i>
+                <span>{item.label}</span>
+              </Link>
+            ))}
+
+            {/* Invitations link in mobile */}
+            <button
+              onClick={() => {
+                router.push('/invitations');
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium text-ink-muted hover:bg-surface-100 transition-all cursor-pointer"
+            >
+              <div className="flex items-center space-x-3">
+                <i className="ri-mail-line text-lg"></i>
+                <span>Приглашения</span>
+              </div>
+              {invitationCount > 0 && (
+                <span className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full">
+                  {invitationCount}
+                </span>
+              )}
+            </button>
+
+            {user?.role === 'PM' && (
+              <Link
+                href="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-amber-600 hover:bg-amber-50 transition-all cursor-pointer"
+              >
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-100">
-                    <i className={`${getNotificationIcon(selectedNotification.type)} text-xl`}></i>
+                  <i className="ri-admin-line text-lg"></i>
+                  <span>Администрирование</span>
+                </div>
+                {pendingCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            <div className="border-t border-surface-200 pt-2 mt-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  logout();
+                }}
+                className="flex items-center space-x-3 w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+              >
+                <i className="ri-logout-box-line text-lg"></i>
+                <span>Выйти</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNotificationDetail && selectedNotification && (
+        <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-elevated max-w-md w-full border border-surface-200">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-surface-100 flex-shrink-0">
+                    <i className={`${getNotificationIcon(selectedNotification.type)} text-lg sm:text-xl`}></i>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-ink">{selectedNotification.title}</h3>
-                    <span className="text-sm text-ink-light">
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-bold text-ink truncate">{selectedNotification.title}</h3>
+                    <span className="text-xs sm:text-sm text-ink-light">
                       {getNotificationTypeLabel(selectedNotification.type)} • {selectedNotification.time}
                     </span>
                   </div>
@@ -396,17 +482,17 @@ const Navbar: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={() => setShowNotificationDetail(false)}
-                  className="flex-1 px-4 py-3 text-sm font-semibold text-ink bg-surface-100 hover:bg-surface-200 rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-2.5 sm:py-3 text-sm font-semibold text-ink bg-surface-100 hover:bg-surface-200 rounded-lg sm:rounded-xl transition-colors cursor-pointer"
                 >
                   Закрыть
                 </button>
                 {selectedNotification.actionUrl && (
                   <button
                     onClick={handleNotificationAction}
-                    className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-xl shadow-soft transition-all cursor-pointer"
+                    className="flex-1 px-4 py-2.5 sm:py-3 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-lg sm:rounded-xl shadow-soft transition-all cursor-pointer"
                   >
                     <i className="ri-external-link-line mr-2"></i>
                     Перейти

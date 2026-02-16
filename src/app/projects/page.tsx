@@ -17,12 +17,22 @@ const Projects: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('all');
   const [creating, setCreating] = useState(false);
+  const [showContractSection, setShowContractSection] = useState(false);
 
   const [newProject, setNewProject] = useState({
     name: '',
     key: '',
     description: '',
+    contractNumber: '',
+    contractSignDate: '',
+    contractEndDate: '',
+    rate: '',
+    contractAmount: '',
+    externalLaborCost: '',
+    internalLaborCost: '',
   });
+
+  const [contractFile, setContractFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -49,13 +59,34 @@ const Projects: React.FC = () => {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProject),
+        body: JSON.stringify({
+          name: newProject.name,
+          key: newProject.key,
+          description: newProject.description,
+          contractNumber: newProject.contractNumber || null,
+          contractSignDate: newProject.contractSignDate || null,
+          contractEndDate: newProject.contractEndDate || null,
+          rate: newProject.rate || null,
+          contractAmount: newProject.contractAmount || null,
+          externalLaborCost: newProject.externalLaborCost || null,
+          internalLaborCost: newProject.internalLaborCost || null,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
+
+        // Upload contract file if provided
+        if (contractFile && data.project?.id) {
+          const formData = new FormData();
+          formData.append('file', contractFile);
+          formData.append('projectId', data.project.id);
+          formData.append('category', 'contract');
+          await fetch('/api/upload', { method: 'POST', body: formData });
+        }
+
         setProjects([data.project, ...projects]);
-        setNewProject({ name: '', key: '', description: '' });
+        resetForm();
         setShowCreateModal(false);
       }
     } catch (error) {
@@ -65,8 +96,18 @@ const Projects: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setNewProject({
+      name: '', key: '', description: '',
+      contractNumber: '', contractSignDate: '', contractEndDate: '',
+      rate: '', contractAmount: '', externalLaborCost: '', internalLaborCost: '',
+    });
+    setContractFile(null);
+    setShowContractSection(false);
+  };
+
   const handleCloseModal = () => {
-    setNewProject({ name: '', key: '', description: '' });
+    resetForm();
     setShowCreateModal(false);
   };
 
@@ -141,8 +182,8 @@ const Projects: React.FC = () => {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center group-hover:from-primary-200 group-hover:to-primary-300 transition-all duration-300 shadow-soft">
-                        <span className="text-primary-700 font-bold text-sm">{project.key}</span>
+                      <div className="min-w-[3rem] max-w-[12rem] h-12 px-3 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center group-hover:from-primary-200 group-hover:to-primary-300 transition-all duration-300 shadow-soft">
+                        <span className="text-primary-700 font-bold text-sm truncate">{project.key}</span>
                       </div>
                       <div>
                         <h3 className="font-semibold text-ink group-hover:text-primary-600 transition-colors">{project.name}</h3>
@@ -209,9 +250,9 @@ const Projects: React.FC = () => {
         isOpen={showCreateModal}
         onClose={handleCloseModal}
         title="Создать новый проект"
-        size="md"
+        size="lg"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
           <Input
             label="Название проекта"
             value={newProject.name}
@@ -234,9 +275,99 @@ const Projects: React.FC = () => {
               value={newProject.description}
               onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
               placeholder="Описание проекта"
-              rows={4}
+              rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mint-500 focus:border-transparent bg-white"
             />
+          </div>
+
+          {/* Contract Section */}
+          <div className="border-t pt-4">
+            <button
+              type="button"
+              onClick={() => setShowContractSection(!showContractSection)}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer w-full"
+            >
+              <i className={`ri-arrow-${showContractSection ? 'down' : 'right'}-s-line`}></i>
+              <i className="ri-file-text-line"></i>
+              Данные договора (опционально)
+            </button>
+
+            {showContractSection && (
+              <div className="mt-4 space-y-4 pl-1">
+                <Input
+                  label="Номер договора"
+                  value={newProject.contractNumber}
+                  onChange={(e) => setNewProject({ ...newProject, contractNumber: e.target.value })}
+                  placeholder="Например: ДГ-2025/001"
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Дата подписания"
+                    type="date"
+                    value={newProject.contractSignDate}
+                    onChange={(e) => setNewProject({ ...newProject, contractSignDate: e.target.value })}
+                  />
+                  <Input
+                    label="Дата окончания"
+                    type="date"
+                    value={newProject.contractEndDate}
+                    onChange={(e) => setNewProject({ ...newProject, contractEndDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Ставка (руб/час)"
+                    type="number"
+                    value={newProject.rate}
+                    onChange={(e) => setNewProject({ ...newProject, rate: e.target.value })}
+                    placeholder="0"
+                  />
+                  <Input
+                    label="Сумма контракта"
+                    type="number"
+                    value={newProject.contractAmount}
+                    onChange={(e) => setNewProject({ ...newProject, contractAmount: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Внешние трудозатраты (ч)"
+                    type="number"
+                    value={newProject.externalLaborCost}
+                    onChange={(e) => setNewProject({ ...newProject, externalLaborCost: e.target.value })}
+                    placeholder="0"
+                  />
+                  <Input
+                    label="Внутренние трудозатраты (ч)"
+                    type="number"
+                    value={newProject.internalLaborCost}
+                    onChange={(e) => setNewProject({ ...newProject, internalLaborCost: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Файл договора
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) => setContractFile(e.target.files?.[0] || null)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 file:cursor-pointer"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  />
+                  {contractFile && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Выбран: {contractFile.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex space-x-4 pt-4">

@@ -84,11 +84,6 @@ export default function Landing() {
 
         <div className="max-w-7xl mx-auto relative">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center px-4 py-2 bg-primary-50 rounded-full text-primary-700 text-sm font-medium mb-8">
-              <i className="ri-rocket-line mr-2"></i>
-              Новая версия 2.0 уже доступна
-            </div>
-
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
               <span className="bg-gradient-to-r from-ink via-primary-600 to-primary-500 bg-clip-text text-transparent">
                 Управляйте проектами

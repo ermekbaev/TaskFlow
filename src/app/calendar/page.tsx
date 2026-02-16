@@ -8,6 +8,7 @@ import Navbar from '@/components/feature/Navbar';
 import Button from '@/components/base/Button';
 import Modal from '@/components/base/Modal';
 import Input from '@/components/base/Input';
+import EventViewEditModal from '@/components/feature/EventViewEditModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Helper functions
@@ -175,6 +176,27 @@ interface CalendarEvent {
   type: 'task' | 'meeting' | 'reminder' | 'personal';
   completed: boolean;
   userId: string;
+  reminderTime?: string;
+  reminderSent?: boolean;
+  attachments?: Array<{
+    id: string;
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+    category: string;
+    createdAt: string;
+  }>;
+}
+
+interface Task {
+  id: string;
+  key: string;
+  title: string;
+  dueDate: string | null;
+  priority: 'P1' | 'P2' | 'P3' | 'P4';
+  status: string;
+  project: { name: string; key: string };
 }
 
 interface PersonalTask {
@@ -252,6 +274,14 @@ const Calendar: React.FC = () => {
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showDayEventsModal, setShowDayEventsModal] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState<{ events: CalendarEvent[]; tasks: Task[]; date: Date | null }>({
+    events: [],
+    tasks: [],
+    date: null,
+  });
+  const [reminderNotifications, setReminderNotifications] = useState<string[]>([]);
 
   // Загрузка событий из БД
   useEffect(() => {
@@ -261,6 +291,66 @@ const Calendar: React.FC = () => {
       .then(data => setEvents(data.events || []))
       .catch(() => setEvents([]));
   }, [currentUser, authLoading]);
+
+  // Загрузка задач проекта с дедлайнами
+  useEffect(() => {
+    if (authLoading || !currentUser) return;
+    fetch(`/api/tasks?assigneeId=${currentUser.id}`)
+      .then(res => (res.ok ? res.json() : { tasks: [] }))
+      .then(data => {
+        const tasksWithDueDates = (data.tasks || []).filter((t: Task) => t.dueDate);
+        setTasks(tasksWithDueDates);
+      })
+      .catch(() => setTasks([]));
+  }, [currentUser, authLoading]);
+
+  // Система напоминаний о встречах
+  useEffect(() => {
+    if (!events.length) return;
+
+    const checkReminders = () => {
+      events.forEach(event => {
+        if (
+          event.type === 'meeting' &&
+          event.reminderTime &&
+          !event.reminderSent &&
+          !reminderNotifications.includes(event.id)
+        ) {
+          const now = new Date();
+          const startDateTime = new Date(`${event.startDate}T${event.startTime}`);
+          const reminderMinutes = parseInt(event.reminderTime);
+          const reminderTime = new Date(startDateTime.getTime() - reminderMinutes * 60 * 1000);
+
+          if (now >= reminderTime && now < startDateTime) {
+            // Browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(`Встреча: ${event.title}`, {
+                body: `Начало через ${event.reminderTime} минут`,
+              });
+            }
+
+            setReminderNotifications(prev => [...prev, event.id]);
+
+            // Отметить как отправленное
+            fetch('/api/calendar', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: event.id, reminderSent: true }),
+            });
+          }
+        }
+      });
+    };
+
+    // Запросить разрешение на уведомления
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    checkReminders();
+    const interval = setInterval(checkReminders, 60000); // Проверка каждые 60 секунд
+    return () => clearInterval(interval);
+  }, [events, reminderNotifications]);
 
   // Загрузка персональных задач и списков из localStorage
   useEffect(() => {
@@ -421,6 +511,43 @@ const Calendar: React.FC = () => {
     return time.slice(0, 5);
   };
 
+  const getPriorityConfig = (priority: string) => {
+    switch (priority) {
+      case 'P1':
+        return { color: 'bg-red-100 text-red-700 border-red-300', icon: 'ri-error-warning-fill', label: 'Критический' };
+      case 'P2':
+        return { color: 'bg-orange-100 text-orange-700 border-orange-300', icon: 'ri-alert-fill', label: 'Высокий' };
+      case 'P3':
+        return { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: 'ri-information-fill', label: 'Средний' };
+      case 'P4':
+        return { color: 'bg-blue-100 text-blue-700 border-blue-300', icon: 'ri-flag-line', label: 'Низкий' };
+      default:
+        return { color: 'bg-gray-100 text-gray-700 border-gray-300', icon: 'ri-checkbox-line', label: 'Обычный' };
+    }
+  };
+
+  const getTasksForDate = (date: Date | null) => {
+    if (!date) return [];
+    const dateStr = date.toISOString().split('T')[0];
+    return tasks.filter(task => task.dueDate === dateStr);
+  };
+
+  const handleUpdateEvent = async (eventId: string, updates: Partial<CalendarEvent>) => {
+    try {
+      const res = await fetch('/api/calendar', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: eventId, ...updates }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(events.map(e => (e.id === eventId ? data.event : e)));
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+    }
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + (direction === 'next' ? 1 : -1), 1));
   };
@@ -559,12 +686,13 @@ const Calendar: React.FC = () => {
     const weekDaysLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
     return (
-      <div className="p-4">
+      <div className="p-2 md:p-4">
         {/* Заголовки дней недели */}
-        <div className="grid grid-cols-7 mb-2">
+        <div className="grid grid-cols-7 mb-1 md:mb-2">
           {weekDaysLabels.map((day, idx) => (
-            <div key={idx} className="py-3 text-center text-sm font-semibold text-ink-muted">
-              {day}
+            <div key={idx} className="py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-ink-muted">
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.slice(0, 2)}</span>
             </div>
           ))}
         </div>
@@ -575,16 +703,21 @@ const Calendar: React.FC = () => {
             <div
               key={idx}
               onClick={() => {
-                setSelectedDate(day.date);
-                setShowCreateEvent(true);
+                const dayEventsData = {
+                  events: day.dayEvents,
+                  tasks: getTasksForDate(day.date),
+                  date: day.date,
+                };
+                setSelectedDayEvents(dayEventsData);
+                setShowDayEventsModal(true);
               }}
-              className={`min-h-[100px] p-2 cursor-pointer transition-all hover:bg-primary-50 ${
+              className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 cursor-pointer transition-all hover:bg-primary-50 ${
                 day.isCurrentMonth ? 'bg-white' : 'bg-surface-50'
               }`}
             >
               <div className="flex items-center justify-center mb-1">
                 <span
-                  className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-colors ${
+                  className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full text-xs md:text-sm font-medium transition-colors ${
                     day.isToday
                       ? 'bg-primary-600 text-white'
                       : day.isCurrentMonth
@@ -595,11 +728,11 @@ const Calendar: React.FC = () => {
                   {day.dayNumber}
                 </span>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5 md:space-y-1">
                 {day.dayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs px-2 py-1 rounded-md truncate ${event.color || 'bg-primary-100 text-primary-700'}`}
+                    className={`text-xs px-1 md:px-2 py-0.5 md:py-1 rounded-md truncate ${event.color || 'bg-primary-100 text-primary-700'} hidden sm:block`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedEvent(event);
@@ -609,8 +742,31 @@ const Calendar: React.FC = () => {
                     {event.title}
                   </div>
                 ))}
-                {day.dayEvents.length > 2 && (
-                  <div className="text-xs text-ink-muted text-center">+{day.dayEvents.length - 2}</div>
+                {/* Task deadlines */}
+                {getTasksForDate(day.date)
+                  .slice(0, 2 - day.dayEvents.length)
+                  .map(task => {
+                    const priorityConfig = getPriorityConfig(task.priority);
+                    return (
+                      <div
+                        key={task.id}
+                        className={`text-xs px-1 md:px-2 py-0.5 md:py-1 rounded-md truncate border-l-2 ${priorityConfig.color} hidden sm:block`}
+                        title={`Дедлайн: ${task.title} (${task.project.name})`}
+                      >
+                        <i className={`${priorityConfig.icon} mr-1`}></i>
+                        <span className="hidden md:inline">{task.key}</span>
+                      </div>
+                    );
+                  })}
+                {(day.dayEvents.length + getTasksForDate(day.date).length) > 0 && (
+                  <div className="text-xs text-ink-muted text-center sm:hidden">
+                    {day.dayEvents.length + getTasksForDate(day.date).length}
+                  </div>
+                )}
+                {(day.dayEvents.length + getTasksForDate(day.date).length) > 2 && (
+                  <div className="text-xs text-ink-muted text-center hidden sm:block">
+                    +{day.dayEvents.length + getTasksForDate(day.date).length - 2}
+                  </div>
                 )}
               </div>
             </div>
@@ -629,7 +785,7 @@ const Calendar: React.FC = () => {
     const weekDaysArr: Date[] = [];
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
+      day.setDate(day.getDate() + i);
       weekDaysArr.push(day);
     }
 
@@ -765,10 +921,21 @@ const Calendar: React.FC = () => {
         {/* Сетка времени */}
         <div className="bg-surface-200 rounded-xl overflow-hidden">
           {hours.map(hour => {
-            const hourEvents = dayEvents.filter(event => {
+            // События, которые начинаются в этом часе
+            const hourStartEvents = dayEvents.filter(event => {
               if (!event.startTime) return false;
-              const eventHour = parseInt(event.startTime.split(':')[0]);
-              return eventHour === hour;
+              const eventStartHour = parseInt(event.startTime.split(':')[0]);
+              return eventStartHour === hour;
+            });
+
+            // События, которые продолжаются с предыдущих часов
+            const hourContinuingEvents = dayEvents.filter(event => {
+              if (!event.startTime || !event.endTime) return false;
+              const eventStartHour = parseInt(event.startTime.split(':')[0]);
+              const eventEndHour = parseInt(event.endTime.split(':')[0]);
+              const eventEndMinute = parseInt(event.endTime.split(':')[1]);
+              // Событие продолжается, если оно началось раньше и еще не закончилось
+              return eventStartHour < hour && (eventEndHour > hour || (eventEndHour === hour && eventEndMinute > 0));
             });
 
             return (
@@ -780,14 +947,25 @@ const Calendar: React.FC = () => {
                 </div>
 
                 <div
-                  className="col-span-11 bg-white p-2 min-h-[60px] hover:bg-primary-50 cursor-pointer transition-colors"
+                  className="col-span-11 bg-white p-2 min-h-[60px] hover:bg-primary-50 cursor-pointer transition-colors relative"
                   onClick={() => setShowCreateEvent(true)}
                 >
-                  <div className="space-y-2">
-                    {hourEvents.map((event) => (
+                  {/* События, которые начинаются в этом часе - с полной высотой */}
+                  {hourStartEvents.map(event => {
+                    const startHour = parseInt(event.startTime.split(':')[0]);
+                    const startMinute = parseInt(event.startTime.split(':')[1]);
+                    const endHour = parseInt(event.endTime.split(':')[0]);
+                    const endMinute = parseInt(event.endTime.split(':')[1]);
+
+                    // Вычисляем продолжительность в минутах
+                    const durationMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+                    const heightInPx = Math.max(40, (durationMinutes / 60) * 60); // 60px на час
+
+                    return (
                       <div
                         key={event.id}
-                        className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow ${event.color || 'bg-primary-100 text-primary-700'}`}
+                        className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow mb-2 ${event.color || 'bg-primary-100 text-primary-700'}`}
+                        style={{ minHeight: `${heightInPx}px` }}
                         onClick={e => {
                           e.stopPropagation();
                           setSelectedEvent(event);
@@ -804,8 +982,23 @@ const Calendar: React.FC = () => {
                           <div className="text-sm opacity-75 mt-1">{event.description}</div>
                         )}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
+
+                  {/* Индикатор продолжения для событий с предыдущих часов */}
+                  {hourContinuingEvents.map(event => (
+                    <div
+                      key={`continuing-${event.id}`}
+                      className={`px-3 py-1 rounded text-xs opacity-60 mb-1 border-l-4 ${event.color || 'bg-primary-100 text-primary-700'}`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedEvent(event);
+                        setShowEventModal(true);
+                      }}
+                    >
+                      ↓ {event.title} (продолжение)
+                    </div>
+                  ))}
                 </div>
               </div>
             );
@@ -1023,77 +1216,79 @@ const Calendar: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-surface-50 to-surface-100">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">Календарь</h1>
-            <p className="text-ink-muted mt-1">Управляйте своим временем и задачами</p>
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">Календарь</h1>
+            <p className="text-ink-muted mt-1 text-sm md:text-base">Управляйте своим временем и задачами</p>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="flex space-x-1 bg-surface-100 rounded-xl p-1">
+          <div className="flex items-center w-full sm:w-auto">
+            <div className="flex gap-1 bg-surface-100 rounded-xl p-1 w-full sm:w-auto">
               <button
                 onClick={() => setMode('calendar')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
                   mode === 'calendar' ? 'bg-white text-ink shadow-soft' : 'text-ink-muted hover:text-ink'
                 }`}
               >
-                <i className="ri-calendar-line mr-2"></i>
+                <i className="ri-calendar-line mr-1 md:mr-2"></i>
                 Календарь
               </button>
               <button
                 onClick={() => setMode('tasks')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
                   mode === 'tasks' ? 'bg-white text-ink shadow-soft' : 'text-ink-muted hover:text-ink'
                 }`}
               >
-                <i className="ri-task-line mr-2"></i>
-                Задачи ({personalTasks.filter(t => !t.completed).length})
+                <i className="ri-task-line mr-1 md:mr-2"></i>
+                <span className="hidden sm:inline">Задачи ({personalTasks.filter(t => !t.completed).length})</span>
+                <span className="sm:hidden">Задачи</span>
               </button>
             </div>
           </div>
         </div>
 
         {mode === 'calendar' ? (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-soft border border-surface-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+          <div className="space-y-4 md:space-y-6">
+            <div className="bg-white rounded-2xl shadow-soft border border-surface-200 p-4 md:p-6">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                <div className="flex items-center justify-between md:justify-start gap-2 md:gap-4">
                   <Button variant="outline" onClick={() => setCurrentDate(new Date())} size="sm">
                     Сегодня
                   </Button>
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <button onClick={() => navigateMonth('prev')} className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer">
-                      <i className="ri-arrow-left-s-line"></i>
+                      <i className="ri-arrow-left-s-line text-lg"></i>
                     </button>
-                    <h2 className="text-xl font-semibold text-ink min-w-[200px] text-center">
+                    <h2 className="text-base md:text-xl font-semibold text-ink min-w-[140px] md:min-w-[200px] text-center">
                       {format(currentDate, 'LLLL yyyy', { locale: ru })}
                     </h2>
                     <button onClick={() => navigateMonth('next')} className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer">
-                      <i className="ri-arrow-right-s-line"></i>
+                      <i className="ri-arrow-right-s-line text-lg"></i>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className="flex space-x-1 bg-surface-100 rounded-xl p-1">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="flex gap-1 bg-surface-100 rounded-xl p-1 flex-1 md:flex-none">
                     {['month', 'week', 'day'].map(viewType => (
                       <button
                         key={viewType}
                         onClick={() => setView(viewType as any)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+                        className={`px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap flex-1 md:flex-none ${
                           view === viewType ? 'bg-white text-ink shadow-soft' : 'text-ink-muted hover:text-ink'
                         }`}
                       >
-                        {viewType === 'month' ? 'Месяц' : viewType === 'week' ? 'Неделя' : 'День'}
+                        <span className="hidden sm:inline">{viewType === 'month' ? 'Месяц' : viewType === 'week' ? 'Неделя' : 'День'}</span>
+                        <span className="sm:hidden">{viewType === 'month' ? 'М' : viewType === 'week' ? 'Н' : 'Д'}</span>
                       </button>
                     ))}
                   </div>
 
-                  <Button onClick={() => setShowEventModal(true)}>
-                    <i className="ri-add-line mr-2"></i>
-                    Создать событие
+                  <Button onClick={() => setShowCreateEvent(true)} size="sm" className="whitespace-nowrap">
+                    <i className="ri-add-line md:mr-2"></i>
+                    <span className="hidden md:inline">Создать событие</span>
                   </Button>
                 </div>
               </div>
@@ -1134,6 +1329,7 @@ const Calendar: React.FC = () => {
               endTime: formData.get('endTime') as string,
               type: formData.get('type') as string,
               color: formData.get('color') as string,
+              reminderTime: formData.get('reminderTime') as string,
             };
             handleCreateEvent(newEventData);
           }}
@@ -1164,16 +1360,16 @@ const Calendar: React.FC = () => {
               label="Дата"
               type="date"
               required
-              defaultValue={selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+              defaultValue={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Тип события
+              <label className="block text-sm font-semibold text-ink mb-2">
+                Тип события <span className="text-red-500">*</span>
               </label>
               <select
                 name="type"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border-2 border-surface-200 hover:border-surface-300 rounded-xl text-sm bg-white transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400"
                 required
               >
                 <option value="meeting">Встреча</option>
@@ -1228,6 +1424,23 @@ const Calendar: React.FC = () => {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">
+              Напоминание
+            </label>
+            <select
+              name="reminderTime"
+              className="w-full px-4 py-3 border-2 border-surface-200 hover:border-surface-300 rounded-xl text-sm bg-white transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400"
+            >
+              <option value="">Без напоминания</option>
+              <option value="5">За 5 минут</option>
+              <option value="15">За 15 минут</option>
+              <option value="30">За 30 минут</option>
+              <option value="60">За 1 час</option>
+              <option value="1440">За 1 день</option>
+            </select>
+          </div>
+
           <div className="flex space-x-3 pt-4">
             <Button
               type="button"
@@ -1247,6 +1460,116 @@ const Calendar: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Модальное окно просмотра событий дня */}
+      <Modal
+        isOpen={showDayEventsModal}
+        onClose={() => setShowDayEventsModal(false)}
+        title={selectedDayEvents.date ? format(selectedDayEvents.date, 'd MMMM yyyy', { locale: ru }) : 'События дня'}
+        size="md"
+      >
+        <div className="space-y-4">
+          {/* События */}
+          {selectedDayEvents.events.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-ink-muted mb-2">События</h3>
+              <div className="space-y-2">
+                {selectedDayEvents.events
+                  .sort((a, b) => {
+                    if (!a.startTime && !b.startTime) return 0;
+                    if (!a.startTime) return -1;
+                    if (!b.startTime) return 1;
+                    return a.startTime.localeCompare(b.startTime);
+                  })
+                  .map(event => (
+                    <div
+                      key={event.id}
+                      className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow ${event.color || 'bg-primary-100 text-primary-700'}`}
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setShowEventModal(true);
+                        setShowDayEventsModal(false);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold">{event.title}</div>
+                        {event.startTime && event.endTime && (
+                          <div className="text-sm opacity-75">
+                            {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                          </div>
+                        )}
+                      </div>
+                      {event.description && <div className="text-sm opacity-75 mt-1">{event.description}</div>}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Дедлайны задач */}
+          {selectedDayEvents.tasks.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-ink-muted mb-2">Дедлайны задач</h3>
+              <div className="space-y-2">
+                {selectedDayEvents.tasks.map(task => {
+                  const priorityConfig = getPriorityConfig(task.priority);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`p-3 rounded-lg border-l-4 ${priorityConfig.color}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold">
+                          <i className={`${priorityConfig.icon} mr-2`}></i>
+                          {task.key}: {task.title}
+                        </div>
+                        <span className="text-xs opacity-75">{priorityConfig.label}</span>
+                      </div>
+                      <div className="text-sm opacity-75 mt-1">{task.project.name}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {selectedDayEvents.events.length === 0 && selectedDayEvents.tasks.length === 0 && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i className="ri-calendar-line text-ink-light text-2xl"></i>
+              </div>
+              <h3 className="text-lg font-semibold text-ink mb-2">Нет событий</h3>
+              <p className="text-ink-muted">В этот день пока нет запланированных событий</p>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-surface-200">
+            <Button
+              onClick={() => {
+                setSelectedDate(selectedDayEvents.date);
+                setShowDayEventsModal(false);
+                setShowCreateEvent(true);
+              }}
+              className="w-full"
+            >
+              <i className="ri-add-line mr-2"></i>
+              Создать событие на этот день
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Модальное окно просмотра/редактирования события */}
+      <EventViewEditModal
+        isOpen={showEventModal}
+        onClose={() => {
+          setShowEventModal(false);
+          setSelectedEvent(null);
+        }}
+        event={selectedEvent}
+        onUpdate={handleUpdateEvent}
+        onDelete={handleDeleteEvent}
+      />
 
       <PersonalTaskModal
         isOpen={showTaskModal}

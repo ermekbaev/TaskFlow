@@ -28,6 +28,9 @@ model User {
   calendarEvents   CalendarEvent[]
   sentInvitations     ProjectInvitation[] @relation("InvitationSender")
   receivedInvitations ProjectInvitation[] @relation("InvitationReceiver")
+  attachments      Attachment[]
+  taskAssignments  TaskAssignee[]
+  activities       TaskActivity[]
 }
 
 model UserPermission {
@@ -53,10 +56,20 @@ model Project {
   color       String   @default("#3B82F6")
   createdAt   DateTime @default(now())
 
+  // Данные договора
+  contractNumber    String?
+  contractSignDate  String?
+  contractEndDate   String?
+  rate              Float?
+  contractAmount    Float?
+  externalLaborCost Float?
+  internalLaborCost Float?
+
   owner       User                @relation("ProjectOwner", fields: [ownerId], references: [id])
   members     ProjectMember[]
   tasks       Task[]
   invitations ProjectInvitation[]
+  attachments Attachment[]
 }
 
 model ProjectMember {
@@ -82,19 +95,77 @@ model Task {
   assigneeId  String?
   reporterId  String
   labels      String   @default("[]")
-  storyPoints Int      @default(0)
   dueDate        String?
   startDate      String?
   progress       Int      @default(0)
   estimatedHours Int      @default(0)
-  actualHours    Int      @default(0)
+  actualHours    Float    @default(0)
+  expectedHours  Float    @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  // Тип задачи и иерархия
+  taskType       String   @default("task")   // task | parent | stage | recurring
+  parentId       String?
+  assignmentDate String?
+
+  // Для заглавных задач (taskType = "parent")
+  initiatorName      String?
+  initiatorEmail     String?
+  initiatorPosition  String?
+  curatorName        String?
+  curatorEmail       String?
+  curatorPosition    String?
+  acceptanceStatus   String?
+  customDates        String   @default("[]")
+
+  // Для регулярных задач
+  isRecurring        Boolean  @default(false)
+  recurrencePattern  String?
+  recurrenceDays     String?
 
   project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee         User?             @relation("TaskAssignee", fields: [assigneeId], references: [id])
   reporter         User              @relation("TaskReporter", fields: [reporterId], references: [id])
   reassignRequests ReassignRequest[]
+  parent           Task?             @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children         Task[]            @relation("TaskHierarchy")
+  attachments      Attachment[]
+  assignees        TaskAssignee[]
+  activities       TaskActivity[]
+}
+
+model TaskAssignee {
+  id     String @id @default(cuid())
+  taskId String
+  userId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  category     String   @default("general")
+  projectId    String?
+  taskId       String?
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  activityId   String?
+  calendarEventId String?
+
+  project    Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task       Task?          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy User           @relation(fields: [uploadedById], references: [id])
+  activity   TaskActivity?  @relation("ActivityAttachments", fields: [activityId], references: [id], onDelete: Cascade)
+  calendarEvent CalendarEvent? @relation(fields: [calendarEventId], references: [id], onDelete: Cascade)
 }
 
 model ReassignRequest {
@@ -143,6 +214,24 @@ model ProjectInvitation {
   @@unique([projectId, invitedId, status])
 }
 
+model TaskActivity {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  type      String   // "comment" | "status_change" | "field_change" | "reassign" | "time_entry" | "created"
+  comment   String?
+  field     String?  // "status", "priority", "assigneeId", ...
+  oldValue  String?
+  newValue  String?
+  hours     Float?   // Только для time_entry
+  workDate  String?  // Только для time_entry (YYYY-MM-DD)
+  createdAt DateTime @default(now())
+
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id])
+  attachments Attachment[] @relation("ActivityAttachments")
+}
+
 model CalendarEvent {
   id          String   @id @default(cuid())
   userId      String
@@ -156,6 +245,9 @@ model CalendarEvent {
   type        String   @default("personal")
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
+  reminderTime   String?
+  reminderSent   Boolean  @default(false)
 
   user User @relation(fields: [userId], references: [id])
+  attachments Attachment[]
 }

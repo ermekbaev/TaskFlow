@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/feature/Navbar';
 import PendingApprovals from '@/components/feature/PendingApprovals';
+import EditTaskModal from '@/components/project-board/EditTaskModal';
+import TimeLogModal from '@/components/feature/TimeLogModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Task {
@@ -50,6 +52,30 @@ const Dashboard: React.FC = () => {
   const [pendingReassigns, setPendingReassigns] = useState(0);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit / TimeLog state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [fullTask, setFullTask] = useState<any>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showTimeLogModal, setShowTimeLogModal] = useState(false);
+  const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
+
+  const fetchFullTask = async (taskId: string, then: 'edit' | 'time') => {
+    setLoadingTaskId(taskId);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFullTask(data.task);
+        if (then === 'edit') setShowEditModal(true);
+        else setShowTimeLogModal(true);
+      }
+    } catch (e) {
+      console.error('Error fetching task:', e);
+    } finally {
+      setLoadingTaskId(null);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -290,6 +316,24 @@ const Dashboard: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); fetchFullTask(task.id, 'edit'); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-200 transition-colors text-ink-muted hover:text-primary-600"
+                            title="Редактировать"
+                          >
+                            {loadingTaskId === task.id ? (
+                              <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <i className="ri-edit-line text-sm"></i>
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); fetchFullTask(task.id, 'time'); }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-200 transition-colors text-ink-muted hover:text-amber-600"
+                            title="Списать время"
+                          >
+                            <i className="ri-time-line text-sm"></i>
+                          </button>
                           <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
                             {task.priority}
                           </span>
@@ -520,6 +564,39 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Task Modal */}
+      {fullTask && showEditModal && (
+        <EditTaskModal
+          isOpen={showEditModal}
+          onClose={() => { setShowEditModal(false); setFullTask(null); }}
+          task={fullTask}
+          onSave={(updatedTask) => {
+            setTasks(tasks.map(t => t.id === updatedTask.id ? { ...t, ...updatedTask } : t));
+            setShowEditModal(false);
+            setFullTask(null);
+          }}
+          projectId={fullTask.projectId}
+          existingTasks={tasks.filter(t => t.projectId === fullTask.projectId).map(t => ({
+            id: t.id, key: t.key, title: t.title, taskType: 'task',
+          }))}
+          isManager={user.role === 'PM'}
+        />
+      )}
+
+      {/* Time Log Modal */}
+      {fullTask && showTimeLogModal && (
+        <TimeLogModal
+          isOpen={showTimeLogModal}
+          onClose={() => { setShowTimeLogModal(false); setFullTask(null); }}
+          taskId={fullTask.id}
+          taskKey={fullTask.key}
+          onTimeLogged={() => {
+            setShowTimeLogModal(false);
+            setFullTask(null);
+          }}
+        />
+      )}
     </div>
   );
 };
