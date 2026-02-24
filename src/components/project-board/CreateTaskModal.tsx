@@ -80,6 +80,9 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   // Recurring fields
   const [recurrencePattern, setRecurrencePattern] = useState('weekly');
   const [recurrenceDays, setRecurrenceDays] = useState<string[]>([]);
+  const [isCallEvent, setIsCallEvent] = useState(false);
+  const [callStartTime, setCallStartTime] = useState('09:00');
+  const [callEndTime, setCallEndTime] = useState('10:00');
 
   // Parent task fields
   const [parentFields, setParentFields] = useState({
@@ -113,6 +116,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       taskData.isRecurring = true;
       taskData.recurrencePattern = recurrencePattern;
       taskData.recurrenceDays = recurrenceDays;
+      taskData.isCallEvent = isCallEvent;
+      if (isCallEvent) {
+        taskData.callStartTime = callStartTime;
+        taskData.callEndTime = callEndTime;
+      }
     }
 
     if (taskType === 'parent') {
@@ -135,6 +143,9 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     setAssigneeIds([]);
     setRecurrencePattern('weekly');
     setRecurrenceDays([]);
+    setIsCallEvent(false);
+    setCallStartTime('09:00');
+    setCallEndTime('10:00');
     setParentFields({
       initiatorName: '', initiatorEmail: '', initiatorPosition: '',
       curatorName: '', curatorEmail: '', curatorPosition: '',
@@ -169,7 +180,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       title="Создать новую задачу"
       size="xl"
     >
-      <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
         {/* Task Type Selector */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Тип задачи</label>
@@ -244,20 +255,40 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </div>
         </div>
 
-        {/* Parent task selector (for stages and regular tasks) */}
+        {/* Parent task selector (for stages and regular tasks - only when parent/stage tasks exist) */}
         {(taskType === 'stage' || taskType === 'task') && parentAndStageTasks.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {taskType === 'stage' ? 'Заглавная задача (обязательно)' : 'Родительская задача (опционально)'}
+              {taskType === 'stage' ? 'Заглавная задача (опционально)' : 'Родительская задача (опционально)'}
             </label>
             <select
               value={task.parentId}
               onChange={(e) => setTask({ ...task, parentId: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required={taskType === 'stage'}
             >
               <option value="">Без привязки</option>
               {(taskType === 'stage' ? parentTasks : parentAndStageTasks).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.key} - {t.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Parent task selector for recurring tasks - always shown, all tasks as options */}
+        {taskType === 'recurring' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Родительская задача (опционально)
+            </label>
+            <select
+              value={task.parentId}
+              onChange={(e) => setTask({ ...task, parentId: e.target.value })}
+              className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Без привязки</option>
+              {existingTasks.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.key} - {t.title}
                 </option>
@@ -272,6 +303,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           value={task.assigneeId}
           onChange={(userId) => setTask({ ...task, assigneeId: userId })}
           placeholder="Поиск пользователя по имени или email..."
+          projectId={projectId}
         />
 
         <MultiUserPicker
@@ -280,6 +312,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           onChange={setAssigneeIds}
           excludeIds={task.assigneeId ? [task.assigneeId] : []}
           placeholder="Добавить исполнителей..."
+          projectId={projectId}
         />
 
         {/* Dates - for non-recurring tasks */}
@@ -380,6 +413,39 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 value={task.dueDate}
                 onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
               />
+            </div>
+
+            {/* Call/Meeting option */}
+            <div className="border rounded-lg p-3 bg-white space-y-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="isCallEvent"
+                  checked={isCallEvent}
+                  onChange={(e) => setIsCallEvent(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 rounded cursor-pointer"
+                />
+                <label htmlFor="isCallEvent" className="text-sm font-medium text-gray-700 flex items-center gap-2 cursor-pointer">
+                  <i className="ri-phone-line text-primary-600"></i>
+                  Созвон / Встреча
+                </label>
+              </div>
+              {isCallEvent && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Начало"
+                    type="time"
+                    value={callStartTime}
+                    onChange={(e) => setCallStartTime(e.target.value)}
+                  />
+                  <Input
+                    label="Конец"
+                    type="time"
+                    value={callEndTime}
+                    onChange={(e) => setCallEndTime(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -526,7 +592,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!task.title || (taskType === 'stage' && !task.parentId)}
+            disabled={!task.title}
             className="flex-1"
           >
             Создать задачу

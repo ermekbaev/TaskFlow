@@ -131,11 +131,11 @@ const Dashboard: React.FC = () => {
   const activeProjects = projects.filter(p => p.status === 'Active');
   const allInProgress = tasks.filter(t => t.status === 'In Progress');
   const allCompleted = tasks.filter(t => t.status === 'Done');
-  const highPriorityTasks = tasks.filter(t => t.priority === 'P1' || t.priority === 'P2');
+  const highPriorityTasks = myTasks.filter(t => t.priority === 'P1' || t.priority === 'P2');
 
-  const recentTasks = [...tasks].slice(0, 5);
+  const recentTasks = myTasks.slice(0, 5);
 
-  const overdueTasks = tasks.filter(t => {
+  const overdueTasks = myTasks.filter(t => {
     if (!t.dueDate || t.status === 'Done') return false;
     return new Date(t.dueDate) < new Date();
   });
@@ -307,8 +307,8 @@ const Dashboard: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                            <span className="text-primary-700 text-xs font-bold">{task.key}</span>
+                          <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                            <span className="text-primary-700 text-[10px] font-bold truncate max-w-[36px] text-center leading-tight px-0.5">{task.key}</span>
                           </div>
                           <div>
                             <p className="font-medium text-ink">{task.title}</p>
@@ -469,8 +469,8 @@ const Dashboard: React.FC = () => {
                     onClick={() => router.push(`/project/${project.id}/board`)}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center">
-                        <span className="text-primary-700 text-xs font-bold">{project.key}</span>
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <span className="text-primary-700 text-[10px] font-bold truncate max-w-[36px] text-center leading-tight px-0.5">{project.key}</span>
                       </div>
                       <div>
                         <p className="font-medium text-ink text-sm">{project.name}</p>
@@ -532,7 +532,7 @@ const Dashboard: React.FC = () => {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg">
+                          <span className="text-xs font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg max-w-[80px] truncate inline-block">
                             {project.key}
                           </span>
                           <span className="text-sm font-medium text-ink">{project.name}</span>
@@ -591,6 +591,7 @@ const Dashboard: React.FC = () => {
           onClose={() => { setShowTimeLogModal(false); setFullTask(null); }}
           taskId={fullTask.id}
           taskKey={fullTask.key}
+          isManager={user.role === 'PM'}
           onTimeLogged={() => {
             setShowTimeLogModal(false);
             setFullTask(null);

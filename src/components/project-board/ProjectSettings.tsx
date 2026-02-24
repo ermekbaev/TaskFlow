@@ -210,7 +210,7 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="Настройки проекта" size="lg">
-        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto px-1">
           {/* Основные настройки */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Основные настройки</h3>

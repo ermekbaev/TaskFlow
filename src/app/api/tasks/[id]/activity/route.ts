@@ -48,7 +48,7 @@ export async function POST(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { type, comment, hours, workDate } = await request.json();
+    const { type, comment, hours, workDate, targetUserId } = await request.json();
 
     if (!type) {
       return NextResponse.json({ error: 'type is required' }, { status: 400 });
@@ -67,10 +67,13 @@ export async function POST(
       }
     }
 
+    // PM can log time on behalf of another user
+    const activityUserId = (session.role === 'PM' && targetUserId) ? targetUserId : session.userId;
+
     const activity = await prisma.taskActivity.create({
       data: {
         taskId: params.id,
-        userId: session.userId,
+        userId: activityUserId,
         type,
         comment: comment || null,
         hours: type === 'time_entry' ? parseFloat(hours) : null,

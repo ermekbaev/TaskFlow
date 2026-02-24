@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Modal from '@/components/base/Modal';
 import Input from '@/components/base/Input';
 import Button from '@/components/base/Button';
+import UserPicker from '@/components/base/UserPicker';
 
 interface TimeLogModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface TimeLogModalProps {
   taskId: string;
   taskKey: string;
   onTimeLogged: () => void;
+  isManager?: boolean;
 }
 
 const TimeLogModal: React.FC<TimeLogModalProps> = ({
@@ -19,6 +21,7 @@ const TimeLogModal: React.FC<TimeLogModalProps> = ({
   taskId,
   taskKey,
   onTimeLogged,
+  isManager = false,
 }) => {
   const today = new Date().toISOString().split('T')[0];
   const [hours, setHours] = useState('');
@@ -26,6 +29,7 @@ const TimeLogModal: React.FC<TimeLogModalProps> = ({
   const [comment, setComment] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [targetUserId, setTargetUserId] = useState('');
 
   const handleSubmit = async () => {
     if (!hours || parseFloat(hours) <= 0 || !workDate) return;
@@ -41,6 +45,7 @@ const TimeLogModal: React.FC<TimeLogModalProps> = ({
           hours: parseFloat(hours),
           workDate,
           comment: comment.trim() || null,
+          ...(isManager && targetUserId ? { targetUserId } : {}),
         }),
       });
 
@@ -74,6 +79,7 @@ const TimeLogModal: React.FC<TimeLogModalProps> = ({
     setWorkDate(today);
     setComment('');
     setFiles([]);
+    setTargetUserId('');
     onClose();
   };
 
@@ -90,6 +96,14 @@ const TimeLogModal: React.FC<TimeLogModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={`Списать время — ${taskKey}`} size="md">
       <div className="space-y-4">
+        {isManager && (
+          <UserPicker
+            label="Сотрудник (оставьте пустым для списания от своего имени)"
+            value={targetUserId}
+            onChange={setTargetUserId}
+            placeholder="Выберите сотрудника..."
+          />
+        )}
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Количество часов"

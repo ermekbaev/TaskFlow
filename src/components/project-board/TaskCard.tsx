@@ -16,6 +16,10 @@ interface TaskCardProps {
     dueDate: string;
     taskType?: string;
     isRecurring?: boolean;
+    recurrencePattern?: string;
+    isCallEvent?: boolean;
+    callStartTime?: string;
+    callEndTime?: string;
     expectedHours?: number;
     actualHours?: number;
     assignees?: Array<{ user: { id: string; name: string; email: string } }>;
@@ -30,12 +34,22 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, canEdit, onClick }) => {
   const [showActions, setShowActions] = useState(false);
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBorder = (priority: string) => {
     switch (priority) {
-      case 'P1': return 'border-l-red-500 bg-white';
-      case 'P2': return 'border-l-orange-500 bg-white';
-      case 'P3': return 'border-l-primary-500 bg-white';
-      default: return 'border-l-surface-300 bg-white';
+      case 'P1': return 'border-l-red-500';
+      case 'P2': return 'border-l-orange-500';
+      case 'P3': return 'border-l-primary-500';
+      default: return 'border-l-surface-300';
+    }
+  };
+
+  const getRecurrenceLabel = (pattern?: string) => {
+    switch (pattern) {
+      case 'daily': return 'Ежедневно';
+      case 'weekly': return 'Еженедельно';
+      case 'biweekly': return 'Раз в 2 нед.';
+      case 'monthly': return 'Ежемесячно';
+      default: return 'Регулярная';
     }
   };
 
@@ -71,7 +85,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, canEdit, onClick
     <div
       draggable
       onDragStart={onDragStart}
-      className={`p-3 rounded-lg border-l-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 group overflow-hidden ${getPriorityColor(task.priority)}`}
+      className={`p-3 rounded-lg border-l-4 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 group ${getPriorityBorder(task.priority)} ${task.isRecurring ? 'bg-blue-50/60' : 'bg-white'}`}
       onClick={onClick}
     >
       {/* Header: key, type icon, and menu */}
@@ -149,6 +163,24 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onDragStart, canEdit, onClick
 
       {/* Title */}
       <h4 className="font-medium text-gray-900 text-sm mb-1.5 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug break-words">{task.title}</h4>
+
+      {/* Recurring badges */}
+      {task.isRecurring && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium">
+            <i className="ri-repeat-line text-[10px]"></i>
+            {getRecurrenceLabel(task.recurrencePattern)}
+          </span>
+          {task.isCallEvent && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px] font-medium">
+              <i className="ri-phone-line text-[10px]"></i>
+              {task.callStartTime && task.callEndTime
+                ? `${task.callStartTime}–${task.callEndTime}`
+                : 'Созвон'}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Description */}
       {task.description && (

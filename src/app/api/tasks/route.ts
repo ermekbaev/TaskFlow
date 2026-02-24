@@ -98,6 +98,7 @@ export async function POST(request: Request) {
       acceptanceStatus, customDates,
       // Recurring fields
       isRecurring, recurrencePattern, recurrenceDays,
+      isCallEvent, callStartTime, callEndTime,
       // Multiple assignees
       assigneeIds,
     } = await request.json();
@@ -173,6 +174,9 @@ export async function POST(request: Request) {
         isRecurring: isRecurring || false,
         recurrencePattern: recurrencePattern || null,
         recurrenceDays: recurrenceDays ? JSON.stringify(recurrenceDays) : null,
+        isCallEvent: isCallEvent || false,
+        callStartTime: callStartTime || null,
+        callEndTime: callEndTime || null,
         // Multiple assignees
         ...(assigneeIds && assigneeIds.length > 0 ? {
           assignees: {

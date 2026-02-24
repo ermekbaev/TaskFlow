@@ -252,7 +252,7 @@ const Projects: React.FC = () => {
         title="Создать новый проект"
         size="lg"
       >
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
           <Input
             label="Название проекта"
             value={newProject.name}

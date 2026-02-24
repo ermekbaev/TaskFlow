@@ -2,17 +2,31 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession, hashPassword } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+
     const isManager = session.role === 'PM';
 
+    // If projectId provided, filter by project members only
+    let where: any = { isActive: true };
+    if (projectId) {
+      const members = await prisma.projectMember.findMany({
+        where: { projectId },
+        select: { userId: true },
+      });
+      const memberIds = members.map(m => m.userId);
+      where.id = { in: memberIds };
+    }
+
     const users = await prisma.user.findMany({
-      where: { isActive: true },
+      where,
       include: isManager ? { permissions: true } : undefined,
       orderBy: { createdAt: 'asc' },
     });

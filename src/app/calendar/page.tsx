@@ -18,6 +18,14 @@ const addDays = (date: Date, days: number) => {
   return result;
 };
 
+// Use local date string to avoid UTC offset issues (e.g. UTC+3 shifts dates by -1)
+const toLocalDateStr = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 const getCategoryIcon = (category: string) => {
   switch (category) {
     case 'work':
@@ -222,6 +230,7 @@ const Calendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [mode, setMode] = useState<'calendar' | 'tasks'>('calendar');
+  const [selectedColor, setSelectedColor] = useState('bg-sky-100 text-sky-700');
   const [showEventModal, setShowEventModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
@@ -239,8 +248,8 @@ const Calendar: React.FC = () => {
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: toLocalDateStr(new Date()),
+    endDate: toLocalDateStr(new Date()),
     startTime: '09:00',
     endTime: '10:00',
     color: '#3B82F6',
@@ -377,8 +386,8 @@ const Calendar: React.FC = () => {
     const payload = {
       title: eventToCreate.title,
       description: eventToCreate.description || '',
-      startDate: eventToCreate.startDate || eventToCreate.date || new Date().toISOString().split('T')[0],
-      endDate: eventToCreate.endDate || eventToCreate.date || new Date().toISOString().split('T')[0],
+      startDate: eventToCreate.startDate || eventToCreate.date || toLocalDateStr(new Date()),
+      endDate: eventToCreate.endDate || eventToCreate.date || toLocalDateStr(new Date()),
       startTime: eventToCreate.startTime || '09:00',
       endTime: eventToCreate.endTime || '10:00',
       color: eventToCreate.color || 'bg-sky-100 text-sky-700',
@@ -402,13 +411,14 @@ const Calendar: React.FC = () => {
     setNewEvent({
       title: '',
       description: '',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
+      startDate: toLocalDateStr(new Date()),
+      endDate: toLocalDateStr(new Date()),
       startTime: '09:00',
       endTime: '10:00',
       color: '#3B82F6',
       type: 'personal',
     });
+    setSelectedColor('bg-sky-100 text-sky-700');
     setShowCreateEvent(false);
   };
 
@@ -503,7 +513,7 @@ const Calendar: React.FC = () => {
 
   const getEventsForDate = (date: Date | null) => {
     if (!date) return [];
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     return events.filter(event => event.startDate === dateStr || (event.startDate <= dateStr && event.endDate >= dateStr));
   };
 
@@ -528,7 +538,7 @@ const Calendar: React.FC = () => {
 
   const getTasksForDate = (date: Date | null) => {
     if (!date) return [];
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     return tasks.filter(task => task.dueDate === dateStr);
   };
 
@@ -549,7 +559,15 @@ const Calendar: React.FC = () => {
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + (direction === 'next' ? 1 : -1), 1));
+    if (view === 'week') {
+      const newDate = new Date(currentDate);
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+      setCurrentDate(newDate);
+    } else if (view === 'day') {
+      setCurrentDate(addDays(currentDate, direction === 'next' ? 1 : -1));
+    } else {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + (direction === 'next' ? 1 : -1), 1));
+    }
   };
 
   // Additional task list functions
@@ -663,10 +681,10 @@ const Calendar: React.FC = () => {
 
     const days = [];
     const currentDateObj = new Date(startDate);
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
 
     for (let i = 0; i < 42; i++) {
-      const dateStr = currentDateObj.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(currentDateObj);
       const dayEvents = events.filter(e => e.startDate === dateStr);
       const isCurrentMonth = currentDateObj.getMonth() === currentDate.getMonth();
       const isTodayDate = dateStr === todayStr;
@@ -789,7 +807,7 @@ const Calendar: React.FC = () => {
       weekDaysArr.push(day);
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
     const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
     return (
@@ -798,7 +816,7 @@ const Calendar: React.FC = () => {
         <div className="grid grid-cols-8 gap-px mb-2">
           <div className="p-3"></div>
           {weekDaysArr.map((day, index) => {
-            const dayStr = day.toISOString().split('T')[0];
+            const dayStr = toLocalDateStr(day);
             const isTodayDate = dayStr === todayStr;
             return (
               <div key={index} className="p-3 text-center">
@@ -828,7 +846,7 @@ const Calendar: React.FC = () => {
               </div>
 
               {weekDaysArr.map((day, dayIndex) => {
-                const dayStr = day.toISOString().split('T')[0];
+                const dayStr = toLocalDateStr(day);
                 const isTodayDate = dayStr === todayStr;
                 const dayEvents = getEventsForDate(day).filter(event => {
                   if (!event.startTime) return false;
@@ -874,8 +892,8 @@ const Calendar: React.FC = () => {
   const renderDayView = () => {
     const hours = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
     const dayEvents = getEventsForDate(currentDate);
-    const todayStr = new Date().toISOString().split('T')[0];
-    const currentDayStr = currentDate.toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
+    const currentDayStr = toLocalDateStr(currentDate);
     const isTodayDate = currentDayStr === todayStr;
 
     return (
@@ -1262,7 +1280,16 @@ const Calendar: React.FC = () => {
                       <i className="ri-arrow-left-s-line text-lg"></i>
                     </button>
                     <h2 className="text-base md:text-xl font-semibold text-ink min-w-[140px] md:min-w-[200px] text-center">
-                      {format(currentDate, 'LLLL yyyy', { locale: ru })}
+                      {view === 'week' ? (() => {
+                        const startOfWeek = new Date(currentDate);
+                        const dow = startOfWeek.getDay();
+                        startOfWeek.setDate(startOfWeek.getDate() - (dow === 0 ? 6 : dow - 1));
+                        const endOfWeek = new Date(startOfWeek);
+                        endOfWeek.setDate(endOfWeek.getDate() + 6);
+                        return `${format(startOfWeek, 'd MMM', { locale: ru })} – ${format(endOfWeek, 'd MMM yyyy', { locale: ru })}`;
+                      })() : view === 'day'
+                        ? format(currentDate, 'd MMMM yyyy', { locale: ru })
+                        : format(currentDate, 'LLLL yyyy', { locale: ru })}
                     </h2>
                     <button onClick={() => navigateMonth('next')} className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer">
                       <i className="ri-arrow-right-s-line text-lg"></i>
@@ -1360,7 +1387,7 @@ const Calendar: React.FC = () => {
               label="Дата"
               type="date"
               required
-              defaultValue={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
+              defaultValue={selectedDate ? toLocalDateStr(selectedDate) : toLocalDateStr(new Date())}
             />
 
             <div>
@@ -1400,6 +1427,8 @@ const Calendar: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Цвет события
             </label>
+            {/* Hidden input carries selected color value for form */}
+            <input type="hidden" name="color" value={selectedColor} />
             <div className="flex space-x-2">
               {[
                 { value: 'bg-sky-100 text-sky-700', label: 'Синий' },
@@ -1408,18 +1437,19 @@ const Calendar: React.FC = () => {
                 { value: 'bg-violet-100 text-violet-700', label: 'Фиолетовый' },
                 { value: 'bg-amber-100 text-amber-700', label: 'Оранжевый' },
               ].map((color) => (
-                <label key={color.value} className="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="color"
-                    value={color.value}
-                    defaultChecked={color.value === 'bg-sky-100 text-sky-700'}
-                    className="sr-only"
-                  />
-                  <div className={`w-8 h-8 rounded-full ${color.value} flex items-center justify-center hover:ring-2 hover:ring-offset-2 hover:ring-primary-500`}>
-                    <i className="ri-check-line text-sm"></i>
-                  </div>
-                </label>
+                <button
+                  key={color.value}
+                  type="button"
+                  title={color.label}
+                  onClick={() => setSelectedColor(color.value)}
+                  className={`w-8 h-8 rounded-full ${color.value} flex items-center justify-center transition-all ${
+                    selectedColor === color.value
+                      ? 'ring-2 ring-offset-2 ring-primary-500 scale-110'
+                      : 'opacity-60 hover:opacity-100 hover:scale-105'
+                  }`}
+                >
+                  {selectedColor === color.value && <i className="ri-check-line text-sm"></i>}
+                </button>
               ))}
             </div>
           </div>

@@ -798,6 +798,7 @@ const TaskList: React.FC = () => {
           }}
           taskId={selectedTask.id}
           taskKey={selectedTask.key}
+          isManager={isManager}
           onTimeLogged={async () => {
             setShowTimeLogModal(false);
             setActivityRefreshKey((k) => k + 1);

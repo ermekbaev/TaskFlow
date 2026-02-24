@@ -311,7 +311,7 @@ const ProjectBoard: React.FC = () => {
       {/* Task Detail Modal */}
       <Modal isOpen={showTaskDetail} onClose={() => setShowTaskDetail(false)} title={selectedTask?.key || ''} size="xl">
         {selectedTask && (
-          <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="space-y-5 max-h-[70vh] overflow-y-auto px-1">
             {/* Header */}
             <div>
               <h2 className="text-lg font-semibold text-ink mb-2">{selectedTask.title}</h2>
@@ -738,6 +738,7 @@ const ProjectBoard: React.FC = () => {
           onClose={() => setShowTimeLogModal(false)}
           taskId={selectedTask.id}
           taskKey={selectedTask.key}
+          isManager={currentUser?.role === 'PM'}
           onTimeLogged={async () => {
             try {
               const res = await fetch(`/api/tasks/${selectedTask.id}`);

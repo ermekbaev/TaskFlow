@@ -236,7 +236,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Редактировать — ${task.key}`} size="xl">
-      <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
         {/* Task Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Тип задачи</label>

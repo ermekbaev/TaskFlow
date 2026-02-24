@@ -14,6 +14,7 @@ interface UserPickerProps {
   excludeIds?: string[];
   label?: string;
   placeholder?: string;
+  projectId?: string;
 }
 
 const UserPicker: React.FC<UserPickerProps> = ({
@@ -22,6 +23,7 @@ const UserPicker: React.FC<UserPickerProps> = ({
   excludeIds = [],
   label,
   placeholder = 'Поиск по имени или email...',
+  projectId,
 }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
@@ -31,12 +33,13 @@ const UserPicker: React.FC<UserPickerProps> = ({
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/users')
+    const url = projectId ? `/api/users?projectId=${projectId}` : '/api/users';
+    fetch(url)
       .then(res => res.json())
       .then(data => setUsers(data.users || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
