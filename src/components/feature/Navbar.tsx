@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: "info" | "success" | "warning" | "error";
   time: string;
   read: boolean;
   details?: string;
@@ -20,10 +20,10 @@ const formatTime = (dateStr: string) => {
   const d = new Date(dateStr);
   const now = new Date();
   const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-  if (diff < 60) return 'только что';
+  if (diff < 60) return "только что";
   if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
-  return d.toLocaleDateString('ru-RU');
+  return d.toLocaleDateString("ru-RU");
 };
 
 const Navbar: React.FC = () => {
@@ -34,18 +34,19 @@ const Navbar: React.FC = () => {
   const [invitationCount, setInvitationCount] = useState(0);
 
   const menuItems = [
-    { icon: 'ri-dashboard-3-line', label: 'Главная', path: '/dashboard' },
-    { icon: 'ri-folder-line', label: 'Проекты', path: '/projects' },
-    { icon: 'ri-task-line', label: 'Задачи', path: '/tasks' },
-    { icon: 'ri-bar-chart-horizontal-line', label: 'Гант', path: '/gantt' },
-    { icon: 'ri-calendar-line', label: 'Календарь', path: '/calendar' },
-    { icon: 'ri-user-line', label: 'Профиль', path: '/profile' },
-    { icon: 'ri-settings-line', label: 'Настройки', path: '/settings' },
+    { icon: "ri-dashboard-3-line", label: "Главная", path: "/dashboard" },
+    { icon: "ri-folder-line", label: "Проекты", path: "/projects" },
+    { icon: "ri-task-line", label: "Задачи", path: "/tasks" },
+    { icon: "ri-bar-chart-horizontal-line", label: "Гант", path: "/gantt" },
+    { icon: "ri-calendar-line", label: "Календарь", path: "/calendar" },
+    { icon: "ri-user-line", label: "Профиль", path: "/profile" },
+    { icon: "ri-settings-line", label: "Настройки", path: "/settings" },
   ];
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showNotificationDetail, setShowNotificationDetail] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -53,10 +54,10 @@ const Navbar: React.FC = () => {
 
   // Fetch pending reassign requests count for PM
   useEffect(() => {
-    if (user?.role === 'PM') {
-      fetch('/api/reassign-requests')
-        .then(res => res.ok ? res.json() : { requests: [] })
-        .then(data => setPendingCount(data.requests?.length || 0))
+    if (user?.role === "PM") {
+      fetch("/api/reassign-requests")
+        .then((res) => (res.ok ? res.json() : { requests: [] }))
+        .then((data) => setPendingCount(data.requests?.length || 0))
         .catch(() => setPendingCount(0));
     }
   }, [user?.role]);
@@ -65,9 +66,9 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     const fetchInvitations = () => {
-      fetch('/api/invitations')
-        .then(res => res.ok ? res.json() : { invitations: [] })
-        .then(data => setInvitationCount(data.invitations?.length || 0))
+      fetch("/api/invitations")
+        .then((res) => (res.ok ? res.json() : { invitations: [] }))
+        .then((data) => setInvitationCount(data.invitations?.length || 0))
         .catch(() => setInvitationCount(0));
     };
     fetchInvitations();
@@ -79,14 +80,14 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     const fetchNotifications = () => {
-      fetch('/api/notifications')
-        .then(res => res.ok ? res.json() : { notifications: [] })
-        .then(data => {
+      fetch("/api/notifications")
+        .then((res) => (res.ok ? res.json() : { notifications: [] }))
+        .then((data) => {
           const mapped = (data.notifications || []).map((n: any) => ({
             id: n.id,
             title: n.title,
             message: n.message,
-            type: n.type || 'info',
+            type: n.type || "info",
             time: formatTime(n.createdAt),
             read: n.read,
             actionUrl: n.actionUrl,
@@ -100,27 +101,32 @@ const Navbar: React.FC = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => (n.id === id ? { ...n, read: true } : n)));
-    fetch('/api/notifications', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'markRead', id }),
+    setNotifications(
+      notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    );
+    fetch("/api/notifications", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "markRead", id }),
     }).catch(console.error);
   };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-    fetch('/api/notifications', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'markAllRead' }),
+    setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    fetch("/api/notifications", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "markAllRead" }),
     }).catch(console.error);
   };
 
-  const handleNotificationIconClick = (e: React.MouseEvent, notification: Notification) => {
+  const handleNotificationIconClick = (
+    e: React.MouseEvent,
+    notification: Notification,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedNotification(notification);
@@ -138,19 +144,27 @@ const Navbar: React.FC = () => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success': return 'ri-check-circle-line text-green-500';
-      case 'warning': return 'ri-alert-line text-yellow-500';
-      case 'error': return 'ri-error-warning-line text-red-500';
-      default: return 'ri-information-line text-primary-500';
+      case "success":
+        return "ri-check-circle-line text-green-500";
+      case "warning":
+        return "ri-alert-line text-yellow-500";
+      case "error":
+        return "ri-error-warning-line text-red-500";
+      default:
+        return "ri-information-line text-primary-500";
     }
   };
 
   const getNotificationTypeLabel = (type: string) => {
     switch (type) {
-      case 'success': return 'Успех';
-      case 'warning': return 'Внимание';
-      case 'error': return 'Ошибка';
-      default: return 'Информация';
+      case "success":
+        return "Успех";
+      case "warning":
+        return "Внимание";
+      case "error":
+        return "Ошибка";
+      default:
+        return "Информация";
     }
   };
 
@@ -165,7 +179,9 @@ const Navbar: React.FC = () => {
               <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg sm:rounded-xl flex items-center justify-center shadow-soft flex-shrink-0">
                 <i className="ri-dashboard-line text-white text-base sm:text-lg"></i>
               </div>
-              <span className="hidden sm:inline xl:inline text-base xl:text-xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent whitespace-nowrap">TaskFlow</span>
+              <span className="hidden sm:inline xl:inline text-base xl:text-xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent whitespace-nowrap">
+                QuantumTask
+              </span>
             </Link>
 
             {/* Desktop & Tablet Navigation with horizontal scroll */}
@@ -177,8 +193,8 @@ const Navbar: React.FC = () => {
                     href={item.path}
                     className={`flex items-center justify-center xl:justify-start space-x-0 xl:space-x-2 px-2.5 xl:px-4 py-2 xl:py-2.5 rounded-lg xl:rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap ${
                       pathname === item.path
-                        ? 'bg-primary-50 text-primary-700 shadow-soft'
-                        : 'text-ink-muted hover:text-ink hover:bg-surface-100'
+                        ? "bg-primary-50 text-primary-700 shadow-soft"
+                        : "text-ink-muted hover:text-ink hover:bg-surface-100"
                     }`}
                     title={item.label}
                   >
@@ -196,7 +212,9 @@ const Navbar: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900 cursor-pointer"
             >
-              <i className={`${isMobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'} text-2xl`}></i>
+              <i
+                className={`${isMobileMenuOpen ? "ri-close-line" : "ri-menu-line"} text-2xl`}
+              ></i>
             </button>
 
             <div className="relative hidden md:block">
@@ -210,8 +228,12 @@ const Navbar: React.FC = () => {
                   </span>
                 </div>
                 <div className="hidden xl:block text-left">
-                  <div className="text-sm font-semibold text-ink truncate max-w-[120px]">{user.name}</div>
-                  <div className="text-xs text-ink-light truncate max-w-[120px]">{user.email}</div>
+                  <div className="text-sm font-semibold text-ink truncate max-w-[120px]">
+                    {user.name}
+                  </div>
+                  <div className="text-xs text-ink-light truncate max-w-[120px]">
+                    {user.email}
+                  </div>
                 </div>
                 <i className="ri-arrow-down-s-line text-gray-400 hidden xl:inline"></i>
               </button>
@@ -219,13 +241,19 @@ const Navbar: React.FC = () => {
               {isUserMenuOpen && (
                 <div className="absolute right-0 mt-3 w-56 sm:w-64 bg-white rounded-2xl shadow-elevated border border-surface-200 py-3 z-50">
                   <div className="px-4 py-3 border-b border-surface-200">
-                    <div className="text-sm font-semibold text-ink">{user.name}</div>
+                    <div className="text-sm font-semibold text-ink">
+                      {user.name}
+                    </div>
                     <div className="text-sm text-ink-light">{user.email}</div>
                     <div className="mt-1">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        user.role === 'PM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {user.role === 'PM' ? 'PM' : 'Разработчик'}
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          user.role === "PM"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}
+                      >
+                        {user.role === "PM" ? "PM" : "Разработчик"}
                       </span>
                     </div>
                   </div>
@@ -242,7 +270,7 @@ const Navbar: React.FC = () => {
                     </Link>
                   ))}
 
-                  {user.role === 'PM' && (
+                  {user.role === "PM" && (
                     <Link
                       href="/admin"
                       className="flex items-center space-x-3 px-4 py-2.5 text-sm text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
@@ -275,14 +303,14 @@ const Navbar: React.FC = () => {
             </div>
 
             <button
-              onClick={() => router.push('/invitations')}
+              onClick={() => router.push("/invitations")}
               className="hidden md:flex w-8 h-8 items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer relative flex-shrink-0"
               title="Приглашения"
             >
               <i className="ri-mail-line text-lg xl:text-xl"></i>
               {invitationCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 xl:w-5 xl:h-5 bg-emerald-500 text-white text-[10px] xl:text-xs rounded-full flex items-center justify-center">
-                  {invitationCount > 9 ? '9+' : invitationCount}
+                  {invitationCount > 9 ? "9+" : invitationCount}
                 </span>
               )}
             </button>
@@ -295,7 +323,7 @@ const Navbar: React.FC = () => {
                 <i className="ri-notification-line text-lg xl:text-xl"></i>
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 xl:w-5 xl:h-5 bg-red-500 text-white text-[10px] xl:text-xs rounded-full flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </button>
@@ -327,16 +355,20 @@ const Navbar: React.FC = () => {
                         <div
                           key={notification.id}
                           className={`p-4 border-b border-surface-100 hover:bg-surface-50 cursor-pointer transition-colors ${
-                            !notification.read ? 'bg-primary-50/50' : ''
+                            !notification.read ? "bg-primary-50/50" : ""
                           }`}
                           onClick={() => markAsRead(notification.id)}
                         >
                           <div className="flex items-start space-x-3">
                             <div
                               className="flex-shrink-0 mt-1 cursor-pointer hover:scale-110 transition-transform"
-                              onClick={(e) => handleNotificationIconClick(e, notification)}
+                              onClick={(e) =>
+                                handleNotificationIconClick(e, notification)
+                              }
                             >
-                              <i className={`${getNotificationIcon(notification.type)} text-lg`}></i>
+                              <i
+                                className={`${getNotificationIcon(notification.type)} text-lg`}
+                              ></i>
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
@@ -350,7 +382,9 @@ const Navbar: React.FC = () => {
                               <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                                 {notification.message}
                               </p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {notification.time}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -386,8 +420,8 @@ const Navbar: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
                   pathname === item.path
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-ink-muted hover:bg-surface-100'
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-ink-muted hover:bg-surface-100"
                 }`}
               >
                 <i className={`${item.icon} text-lg`}></i>
@@ -398,7 +432,7 @@ const Navbar: React.FC = () => {
             {/* Invitations link in mobile */}
             <button
               onClick={() => {
-                router.push('/invitations');
+                router.push("/invitations");
                 setIsMobileMenuOpen(false);
               }}
               className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium text-ink-muted hover:bg-surface-100 transition-all cursor-pointer"
@@ -414,7 +448,7 @@ const Navbar: React.FC = () => {
               )}
             </button>
 
-            {user?.role === 'PM' && (
+            {user?.role === "PM" && (
               <Link
                 href="/admin"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -455,12 +489,17 @@ const Navbar: React.FC = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-surface-100 flex-shrink-0">
-                    <i className={`${getNotificationIcon(selectedNotification.type)} text-lg sm:text-xl`}></i>
+                    <i
+                      className={`${getNotificationIcon(selectedNotification.type)} text-lg sm:text-xl`}
+                    ></i>
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-bold text-ink truncate">{selectedNotification.title}</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-ink truncate">
+                      {selectedNotification.title}
+                    </h3>
                     <span className="text-xs sm:text-sm text-ink-light">
-                      {getNotificationTypeLabel(selectedNotification.type)} • {selectedNotification.time}
+                      {getNotificationTypeLabel(selectedNotification.type)} •{" "}
+                      {selectedNotification.time}
                     </span>
                   </div>
                 </div>
@@ -473,11 +512,17 @@ const Navbar: React.FC = () => {
               </div>
 
               <div className="mb-6">
-                <p className="text-ink-muted mb-4">{selectedNotification.message}</p>
+                <p className="text-ink-muted mb-4">
+                  {selectedNotification.message}
+                </p>
                 {selectedNotification.details && (
                   <div className="bg-surface-50 rounded-xl p-4 border border-surface-200">
-                    <h4 className="font-semibold text-ink mb-2">Подробности:</h4>
-                    <p className="text-sm text-ink-muted leading-relaxed">{selectedNotification.details}</p>
+                    <h4 className="font-semibold text-ink mb-2">
+                      Подробности:
+                    </h4>
+                    <p className="text-sm text-ink-muted leading-relaxed">
+                      {selectedNotification.details}
+                    </p>
                   </div>
                 )}
               </div>

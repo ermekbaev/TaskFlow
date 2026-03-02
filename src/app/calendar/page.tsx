@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
-import Navbar from '@/components/feature/Navbar';
-import Button from '@/components/base/Button';
-import Modal from '@/components/base/Modal';
-import Input from '@/components/base/Input';
-import EventViewEditModal from '@/components/feature/EventViewEditModal';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import Navbar from "@/components/feature/Navbar";
+import Button from "@/components/base/Button";
+import Modal from "@/components/base/Modal";
+import Input from "@/components/base/Input";
+import EventViewEditModal from "@/components/feature/EventViewEditModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Helper functions
 const addDays = (date: Date, days: number) => {
@@ -21,36 +21,36 @@ const addDays = (date: Date, days: number) => {
 // Use local date string to avoid UTC offset issues (e.g. UTC+3 shifts dates by -1)
 const toLocalDateStr = (date: Date): string => {
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 };
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'work':
-      return 'ri-briefcase-line';
-    case 'personal':
-      return 'ri-user-line';
-    case 'shopping':
-      return 'ri-shopping-cart-line';
-    case 'health':
-      return 'ri-heart-pulse-line';
+    case "work":
+      return "ri-briefcase-line";
+    case "personal":
+      return "ri-user-line";
+    case "shopping":
+      return "ri-shopping-cart-line";
+    case "health":
+      return "ri-heart-pulse-line";
     default:
-      return 'ri-bookmark-line';
+      return "ri-bookmark-line";
   }
 };
 
 const getCategoryName = (category: string) => {
   switch (category) {
-    case 'work':
-      return 'Работа';
-    case 'personal':
-      return 'Личное';
-    case 'shopping':
-      return 'Покупки';
-    case 'health':
-      return 'Здоровье';
+    case "work":
+      return "Работа";
+    case "personal":
+      return "Личное";
+    case "shopping":
+      return "Покупки";
+    case "health":
+      return "Здоровье";
     default:
       return category;
   }
@@ -66,31 +66,31 @@ const PersonalTaskModal: React.FC<{
   selectedListId: string;
 }> = ({ isOpen, onClose, onSubmit, task, taskLists, selectedListId }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    priority: 'medium' as const,
-    dueDate: '',
-    category: 'personal',
+    title: "",
+    description: "",
+    priority: "medium" as const,
+    dueDate: "",
+    category: "personal",
     listId: selectedListId,
   });
 
   useEffect(() => {
     if (task) {
       setFormData({
-        title: task.title || '',
-        description: task.description || '',
-        priority: task.priority || 'medium',
-        dueDate: task.dueDate || '',
-        category: task.category || 'personal',
+        title: task.title || "",
+        description: task.description || "",
+        priority: task.priority || "medium",
+        dueDate: task.dueDate || "",
+        category: task.category || "personal",
         listId: task.listId || selectedListId,
       });
     } else {
       setFormData({
-        title: '',
-        description: '',
-        priority: 'medium',
-        dueDate: '',
-        category: 'personal',
+        title: "",
+        description: "",
+        priority: "medium",
+        dueDate: "",
+        category: "personal",
         listId: selectedListId,
       });
     }
@@ -103,21 +103,29 @@ const PersonalTaskModal: React.FC<{
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={task ? 'Редактировать задачу' : 'Создать задачу'}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={task ? "Редактировать задачу" : "Создать задачу"}
+    >
       <div className="space-y-4">
         <Input
           label="Название задачи"
           value={formData.title}
-          onChange={e => setFormData({ ...formData, title: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="Введите название задачи"
           required
         />
 
         <div>
-          <label className="block text-sm font-medium text-ink mb-2">Описание</label>
+          <label className="block text-sm font-medium text-ink mb-2">
+            Описание
+          </label>
           <textarea
             value={formData.description}
-            onChange={e => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
             placeholder="Введите описание задачи"
             className="w-full px-4 py-3 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 resize-none transition-all"
             rows={3}
@@ -125,10 +133,14 @@ const PersonalTaskModal: React.FC<{
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink mb-2">Приоритет</label>
+          <label className="block text-sm font-medium text-ink mb-2">
+            Приоритет
+          </label>
           <select
             value={formData.priority}
-            onChange={e => setFormData({ ...formData, priority: e.target.value as any })}
+            onChange={(e) =>
+              setFormData({ ...formData, priority: e.target.value as any })
+            }
             className="w-full px-4 py-3 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 pr-8 transition-all"
           >
             <option value="low">Низкий</option>
@@ -138,13 +150,17 @@ const PersonalTaskModal: React.FC<{
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink mb-2">Список</label>
+          <label className="block text-sm font-medium text-ink mb-2">
+            Список
+          </label>
           <select
             value={formData.listId}
-            onChange={e => setFormData({ ...formData, listId: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, listId: e.target.value })
+            }
             className="w-full px-4 py-3 border-2 border-surface-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 pr-8 transition-all"
           >
-            {taskLists.map(list => (
+            {taskLists.map((list) => (
               <option key={list.id} value={list.id}>
                 {list.name}
               </option>
@@ -156,15 +172,21 @@ const PersonalTaskModal: React.FC<{
           label="Срок выполнения"
           type="date"
           value={formData.dueDate}
-          onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, dueDate: e.target.value })
+          }
         />
 
         <div className="flex space-x-3 pt-4">
           <Button variant="outline" onClick={onClose} className="flex-1">
             Отмена
           </Button>
-          <Button onClick={handleSubmit} disabled={!formData.title.trim()} className="flex-1">
-            {task ? 'Сохранить' : 'Создать'}
+          <Button
+            onClick={handleSubmit}
+            disabled={!formData.title.trim()}
+            className="flex-1"
+          >
+            {task ? "Сохранить" : "Создать"}
           </Button>
         </div>
       </div>
@@ -181,7 +203,7 @@ interface CalendarEvent {
   startTime: string;
   endTime: string;
   color: string;
-  type: 'task' | 'meeting' | 'reminder' | 'personal';
+  type: "task" | "meeting" | "reminder" | "personal";
   completed: boolean;
   userId: string;
   reminderTime?: string;
@@ -202,7 +224,7 @@ interface Task {
   key: string;
   title: string;
   dueDate: string | null;
-  priority: 'P1' | 'P2' | 'P3' | 'P4';
+  priority: "P1" | "P2" | "P3" | "P4";
   status: string;
   project: { name: string; key: string };
 }
@@ -212,7 +234,7 @@ interface PersonalTask {
   title: string;
   description: string;
   completed: boolean;
-  priority: 'low' | 'medium' | 'high';
+  priority: "low" | "medium" | "high";
   dueDate: string | null;
   createdAt: string;
   userId: string;
@@ -220,48 +242,51 @@ interface PersonalTask {
   listId?: string;
 }
 
-const PERSONAL_TASKS_STORAGE_KEY = 'personal_tasks';
-const TASK_LISTS_STORAGE_KEY = 'task_lists';
+const PERSONAL_TASKS_STORAGE_KEY = "personal_tasks";
+const TASK_LISTS_STORAGE_KEY = "task_lists";
 
 const Calendar: React.FC = () => {
   const router = useRouter();
   const { user: currentUser, loading: authLoading } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
-  const [mode, setMode] = useState<'calendar' | 'tasks'>('calendar');
-  const [selectedColor, setSelectedColor] = useState('bg-sky-100 text-sky-700');
+  const [selectedHour, setSelectedHour] = useState<number | null>(null);
+  const [view, setView] = useState<"month" | "week" | "day">("month");
+  const [mode, setMode] = useState<"calendar" | "tasks">("calendar");
+  const [selectedColor, setSelectedColor] = useState("bg-sky-100 text-sky-700");
   const [showEventModal, setShowEventModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [taskFilter, setTaskFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [taskFilter, setTaskFilter] = useState<"all" | "pending" | "completed">(
+    "all",
+  );
 
   // Состояние для списков задач
   const [taskLists, setTaskLists] = useState<any[]>([]);
-  const [selectedTaskList, setSelectedTaskList] = useState('1');
+  const [selectedTaskList, setSelectedTaskList] = useState("1");
   const [showListModal, setShowListModal] = useState(false);
-  const [newListName, setNewListName] = useState('');
+  const [newListName, setNewListName] = useState("");
 
   // Состояния создания/редактирования события и задачи
   const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     startDate: toLocalDateStr(new Date()),
     endDate: toLocalDateStr(new Date()),
-    startTime: '09:00',
-    endTime: '10:00',
-    color: '#3B82F6',
-    type: 'personal' as const,
+    startTime: "09:00",
+    endTime: "10:00",
+    color: "#3B82F6",
+    type: "personal" as const,
   });
 
   const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    priority: 'medium' as const,
-    dueDate: '',
-    category: 'Личное',
+    title: "",
+    description: "",
+    priority: "medium" as const,
+    dueDate: "",
+    category: "Личное",
   });
 
   const loadTasks = () => {
@@ -274,10 +299,10 @@ const Calendar: React.FC = () => {
     const stored = localStorage.getItem(TASK_LISTS_STORAGE_KEY);
     if (stored) return JSON.parse(stored);
     return [
-      { id: '1', name: 'Мои задачи', color: 'blue', isDefault: true },
-      { id: '2', name: 'Личные дела', color: 'green', isDefault: false },
-      { id: '3', name: 'Покупки', color: 'purple', isDefault: false },
-      { id: '4', name: 'Работа', color: 'orange', isDefault: false },
+      { id: "1", name: "Мои задачи", color: "blue", isDefault: true },
+      { id: "2", name: "Личные дела", color: "green", isDefault: false },
+      { id: "3", name: "Покупки", color: "purple", isDefault: false },
+      { id: "4", name: "Работа", color: "orange", isDefault: false },
     ];
   };
 
@@ -285,19 +310,25 @@ const Calendar: React.FC = () => {
   const [personalTasks, setPersonalTasks] = useState<PersonalTask[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showDayEventsModal, setShowDayEventsModal] = useState(false);
-  const [selectedDayEvents, setSelectedDayEvents] = useState<{ events: CalendarEvent[]; tasks: Task[]; date: Date | null }>({
+  const [selectedDayEvents, setSelectedDayEvents] = useState<{
+    events: CalendarEvent[];
+    tasks: Task[];
+    date: Date | null;
+  }>({
     events: [],
     tasks: [],
     date: null,
   });
-  const [reminderNotifications, setReminderNotifications] = useState<string[]>([]);
+  const [reminderNotifications, setReminderNotifications] = useState<string[]>(
+    [],
+  );
 
   // Загрузка событий из БД
   useEffect(() => {
     if (authLoading || !currentUser) return;
-    fetch('/api/calendar')
-      .then(res => res.ok ? res.json() : { events: [] })
-      .then(data => setEvents(data.events || []))
+    fetch("/api/calendar")
+      .then((res) => (res.ok ? res.json() : { events: [] }))
+      .then((data) => setEvents(data.events || []))
       .catch(() => setEvents([]));
   }, [currentUser, authLoading]);
 
@@ -305,9 +336,11 @@ const Calendar: React.FC = () => {
   useEffect(() => {
     if (authLoading || !currentUser) return;
     fetch(`/api/tasks?assigneeId=${currentUser.id}`)
-      .then(res => (res.ok ? res.json() : { tasks: [] }))
-      .then(data => {
-        const tasksWithDueDates = (data.tasks || []).filter((t: Task) => t.dueDate);
+      .then((res) => (res.ok ? res.json() : { tasks: [] }))
+      .then((data) => {
+        const tasksWithDueDates = (data.tasks || []).filter(
+          (t: Task) => t.dueDate,
+        );
         setTasks(tasksWithDueDates);
       })
       .catch(() => setTasks([]));
@@ -318,32 +351,39 @@ const Calendar: React.FC = () => {
     if (!events.length) return;
 
     const checkReminders = () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         if (
-          event.type === 'meeting' &&
+          event.type === "meeting" &&
           event.reminderTime &&
           !event.reminderSent &&
           !reminderNotifications.includes(event.id)
         ) {
           const now = new Date();
-          const startDateTime = new Date(`${event.startDate}T${event.startTime}`);
+          const startDateTime = new Date(
+            `${event.startDate}T${event.startTime}`,
+          );
           const reminderMinutes = parseInt(event.reminderTime);
-          const reminderTime = new Date(startDateTime.getTime() - reminderMinutes * 60 * 1000);
+          const reminderTime = new Date(
+            startDateTime.getTime() - reminderMinutes * 60 * 1000,
+          );
 
           if (now >= reminderTime && now < startDateTime) {
             // Browser notification
-            if ('Notification' in window && Notification.permission === 'granted') {
+            if (
+              "Notification" in window &&
+              Notification.permission === "granted"
+            ) {
               new Notification(`Встреча: ${event.title}`, {
                 body: `Начало через ${event.reminderTime} минут`,
               });
             }
 
-            setReminderNotifications(prev => [...prev, event.id]);
+            setReminderNotifications((prev) => [...prev, event.id]);
 
             // Отметить как отправленное
-            fetch('/api/calendar', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+            fetch("/api/calendar", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id: event.id, reminderSent: true }),
             });
           }
@@ -352,7 +392,7 @@ const Calendar: React.FC = () => {
     };
 
     // Запросить разрешение на уведомления
-    if ('Notification' in window && Notification.permission === 'default') {
+    if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
 
@@ -370,7 +410,10 @@ const Calendar: React.FC = () => {
   // Функция сохранения задач
   const saveTasks = (updatedTasks: PersonalTask[]) => {
     setPersonalTasks(updatedTasks);
-    localStorage.setItem(PERSONAL_TASKS_STORAGE_KEY, JSON.stringify(updatedTasks));
+    localStorage.setItem(
+      PERSONAL_TASKS_STORAGE_KEY,
+      JSON.stringify(updatedTasks),
+    );
   };
 
   // Функция сохранения списков задач
@@ -385,19 +428,25 @@ const Calendar: React.FC = () => {
 
     const payload = {
       title: eventToCreate.title,
-      description: eventToCreate.description || '',
-      startDate: eventToCreate.startDate || eventToCreate.date || toLocalDateStr(new Date()),
-      endDate: eventToCreate.endDate || eventToCreate.date || toLocalDateStr(new Date()),
-      startTime: eventToCreate.startTime || '09:00',
-      endTime: eventToCreate.endTime || '10:00',
-      color: eventToCreate.color || 'bg-sky-100 text-sky-700',
-      type: eventToCreate.type || 'personal',
+      description: eventToCreate.description || "",
+      startDate:
+        eventToCreate.startDate ||
+        eventToCreate.date ||
+        toLocalDateStr(new Date()),
+      endDate:
+        eventToCreate.endDate ||
+        eventToCreate.date ||
+        toLocalDateStr(new Date()),
+      startTime: eventToCreate.startTime || "09:00",
+      endTime: eventToCreate.endTime || "10:00",
+      color: eventToCreate.color || "bg-sky-100 text-sky-700",
+      type: eventToCreate.type || "personal",
     };
 
     try {
-      const res = await fetch('/api/calendar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -405,20 +454,20 @@ const Calendar: React.FC = () => {
         setEvents([...events, data.event]);
       }
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error("Error creating event:", error);
     }
 
     setNewEvent({
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       startDate: toLocalDateStr(new Date()),
       endDate: toLocalDateStr(new Date()),
-      startTime: '09:00',
-      endTime: '10:00',
-      color: '#3B82F6',
-      type: 'personal',
+      startTime: "09:00",
+      endTime: "10:00",
+      color: "#3B82F6",
+      type: "personal",
     });
-    setSelectedColor('bg-sky-100 text-sky-700');
+    setSelectedColor("bg-sky-100 text-sky-700");
     setShowCreateEvent(false);
   };
 
@@ -430,7 +479,7 @@ const Calendar: React.FC = () => {
       ...newTask,
       completed: false,
       createdAt: new Date().toISOString(),
-      userId: currentUser?.id || '',
+      userId: currentUser?.id || "",
       dueDate: newTask.dueDate || null,
     };
 
@@ -438,53 +487,57 @@ const Calendar: React.FC = () => {
     saveTasks(updatedTasks);
 
     setNewTask({
-      title: '',
-      description: '',
-      priority: 'medium',
-      dueDate: '',
-      category: 'Личное',
+      title: "",
+      description: "",
+      priority: "medium",
+      dueDate: "",
+      category: "Личное",
     });
     setShowTaskModal(false);
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      await fetch('/api/calendar', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/calendar", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: eventId }),
       });
-      setEvents(events.filter(event => event.id !== eventId));
+      setEvents(events.filter((event) => event.id !== eventId));
     } catch (error) {
-      console.error('Error deleting event:', error);
+      console.error("Error deleting event:", error);
     }
     setShowEventModal(false);
   };
 
   const handleDeleteTask = (taskId: string) => {
-    const updatedTasks = personalTasks.filter(task => task.id !== taskId);
+    const updatedTasks = personalTasks.filter((task) => task.id !== taskId);
     saveTasks(updatedTasks);
     setShowTaskModal(false);
   };
 
   const handleToggleEventComplete = async (eventId: string) => {
-    const event = events.find(e => e.id === eventId);
+    const event = events.find((e) => e.id === eventId);
     if (!event) return;
     try {
-      await fetch('/api/calendar', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/calendar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: eventId, completed: !event.completed }),
       });
-      setEvents(events.map(e => e.id === eventId ? { ...e, completed: !e.completed } : e));
+      setEvents(
+        events.map((e) =>
+          e.id === eventId ? { ...e, completed: !e.completed } : e,
+        ),
+      );
     } catch (error) {
-      console.error('Error toggling event:', error);
+      console.error("Error toggling event:", error);
     }
   };
 
   const handleToggleTaskComplete = (taskId: string) => {
-    const updatedTasks = personalTasks.map(task =>
-      task.id === taskId ? { ...task, completed: !task.completed } : task
+    const updatedTasks = personalTasks.map((task) =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task,
     );
     saveTasks(updatedTasks);
   };
@@ -493,10 +546,10 @@ const Calendar: React.FC = () => {
   const getFilteredTasks = () => {
     let filtered = personalTasks;
 
-    if (taskFilter === 'pending') {
-      filtered = filtered.filter(task => !task.completed);
-    } else if (taskFilter === 'completed') {
-      filtered = filtered.filter(task => task.completed);
+    if (taskFilter === "pending") {
+      filtered = filtered.filter((task) => !task.completed);
+    } else if (taskFilter === "completed") {
+      filtered = filtered.filter((task) => task.completed);
     }
 
     return filtered.sort((a, b) => {
@@ -505,7 +558,10 @@ const Calendar: React.FC = () => {
       }
       const priorityOrder = { high: 0, medium: 1, low: 2 };
       if (a.priority !== b.priority) {
-        return priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder];
+        return (
+          priorityOrder[a.priority as keyof typeof priorityOrder] -
+          priorityOrder[b.priority as keyof typeof priorityOrder]
+        );
       }
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
@@ -514,7 +570,11 @@ const Calendar: React.FC = () => {
   const getEventsForDate = (date: Date | null) => {
     if (!date) return [];
     const dateStr = toLocalDateStr(date);
-    return events.filter(event => event.startDate === dateStr || (event.startDate <= dateStr && event.endDate >= dateStr));
+    return events.filter(
+      (event) =>
+        event.startDate === dateStr ||
+        (event.startDate <= dateStr && event.endDate >= dateStr),
+    );
   };
 
   const formatTime = (time: string) => {
@@ -523,50 +583,79 @@ const Calendar: React.FC = () => {
 
   const getPriorityConfig = (priority: string) => {
     switch (priority) {
-      case 'P1':
-        return { color: 'bg-red-100 text-red-700 border-red-300', icon: 'ri-error-warning-fill', label: 'Критический' };
-      case 'P2':
-        return { color: 'bg-orange-100 text-orange-700 border-orange-300', icon: 'ri-alert-fill', label: 'Высокий' };
-      case 'P3':
-        return { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: 'ri-information-fill', label: 'Средний' };
-      case 'P4':
-        return { color: 'bg-blue-100 text-blue-700 border-blue-300', icon: 'ri-flag-line', label: 'Низкий' };
+      case "P1":
+        return {
+          color: "bg-red-100 text-red-700 border-red-300",
+          icon: "ri-error-warning-fill",
+          label: "Критический",
+        };
+      case "P2":
+        return {
+          color: "bg-orange-100 text-orange-700 border-orange-300",
+          icon: "ri-alert-fill",
+          label: "Высокий",
+        };
+      case "P3":
+        return {
+          color: "bg-yellow-100 text-yellow-700 border-yellow-300",
+          icon: "ri-information-fill",
+          label: "Средний",
+        };
+      case "P4":
+        return {
+          color: "bg-blue-100 text-blue-700 border-blue-300",
+          icon: "ri-flag-line",
+          label: "Низкий",
+        };
       default:
-        return { color: 'bg-gray-100 text-gray-700 border-gray-300', icon: 'ri-checkbox-line', label: 'Обычный' };
+        return {
+          color: "bg-gray-100 text-gray-700 border-gray-300",
+          icon: "ri-checkbox-line",
+          label: "Обычный",
+        };
     }
   };
 
   const getTasksForDate = (date: Date | null) => {
     if (!date) return [];
     const dateStr = toLocalDateStr(date);
-    return tasks.filter(task => task.dueDate === dateStr);
+    return tasks.filter((task) => task.dueDate === dateStr);
   };
 
-  const handleUpdateEvent = async (eventId: string, updates: Partial<CalendarEvent>) => {
+  const handleUpdateEvent = async (
+    eventId: string,
+    updates: Partial<CalendarEvent>,
+  ) => {
     try {
-      const res = await fetch('/api/calendar', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/calendar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: eventId, ...updates }),
       });
       if (res.ok) {
         const data = await res.json();
-        setEvents(events.map(e => (e.id === eventId ? data.event : e)));
+        setEvents(events.map((e) => (e.id === eventId ? data.event : e)));
       }
     } catch (error) {
-      console.error('Error updating event:', error);
+      console.error("Error updating event:", error);
     }
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    if (view === 'week') {
+  const navigateMonth = (direction: "prev" | "next") => {
+    if (view === "week") {
       const newDate = new Date(currentDate);
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+      newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7));
       setCurrentDate(newDate);
-    } else if (view === 'day') {
-      setCurrentDate(addDays(currentDate, direction === 'next' ? 1 : -1));
+    } else if (view === "day") {
+      setCurrentDate(addDays(currentDate, direction === "next" ? 1 : -1));
     } else {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + (direction === 'next' ? 1 : -1), 1));
+      setCurrentDate(
+        new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() + (direction === "next" ? 1 : -1),
+          1,
+        ),
+      );
     }
   };
 
@@ -574,10 +663,22 @@ const Calendar: React.FC = () => {
   const handleCreateTaskList = () => {
     if (!newListName.trim()) return;
 
-    const colors = ['blue', 'green', 'purple', 'orange', 'red', 'yellow', 'pink', 'indigo'];
-    const usedColors = taskLists.map(list => list.color);
-    const availableColors = colors.filter(color => !usedColors.includes(color));
-    const selectedColor = availableColors.length > 0 ? availableColors[0] : 'gray';
+    const colors = [
+      "blue",
+      "green",
+      "purple",
+      "orange",
+      "red",
+      "yellow",
+      "pink",
+      "indigo",
+    ];
+    const usedColors = taskLists.map((list) => list.color);
+    const availableColors = colors.filter(
+      (color) => !usedColors.includes(color),
+    );
+    const selectedColor =
+      availableColors.length > 0 ? availableColors[0] : "gray";
 
     const newList = {
       id: Date.now().toString(),
@@ -589,45 +690,47 @@ const Calendar: React.FC = () => {
     const updatedLists = [...taskLists, newList];
     saveTaskLists(updatedLists);
 
-    setNewListName('');
+    setNewListName("");
     setShowListModal(false);
   };
 
   const handleDeleteTaskList = (listId: string) => {
-    const listToDelete = taskLists.find(list => list.id === listId);
+    const listToDelete = taskLists.find((list) => list.id === listId);
     if (listToDelete?.isDefault) return;
 
-    const updatedTasks = personalTasks.map(task =>
-      task.listId === listId ? { ...task, listId: '1' } : task,
+    const updatedTasks = personalTasks.map((task) =>
+      task.listId === listId ? { ...task, listId: "1" } : task,
     );
 
-    const updatedLists = taskLists.filter(list => list.id !== listId);
+    const updatedLists = taskLists.filter((list) => list.id !== listId);
 
     saveTaskLists(updatedLists);
     saveTasks(updatedTasks);
 
     if (selectedTaskList === listId) {
-      setSelectedTaskList('1');
+      setSelectedTaskList("1");
     }
   };
 
   const getListColor = (listId: string) => {
-    const list = taskLists.find(l => l.id === listId);
-    return list?.color || 'gray';
+    const list = taskLists.find((l) => l.id === listId);
+    return list?.color || "gray";
   };
 
   const getListName = (listId: string) => {
-    const list = taskLists.find(l => l.id === listId);
-    return list?.name || 'Неизвестный список';
+    const list = taskLists.find((l) => l.id === listId);
+    return list?.name || "Неизвестный список";
   };
 
   const getFilteredPersonalTasks = () => {
-    let filtered = personalTasks.filter(task => task.listId === selectedTaskList);
+    let filtered = personalTasks.filter(
+      (task) => task.listId === selectedTaskList,
+    );
 
-    if (taskFilter === 'pending') {
-      filtered = filtered.filter(task => !task.completed);
-    } else if (taskFilter === 'completed') {
-      filtered = filtered.filter(task => task.completed);
+    if (taskFilter === "pending") {
+      filtered = filtered.filter((task) => !task.completed);
+    } else if (taskFilter === "completed") {
+      filtered = filtered.filter((task) => task.completed);
     }
 
     return filtered.sort((a, b) => {
@@ -635,8 +738,10 @@ const Calendar: React.FC = () => {
         return a.completed ? 1 : -1;
       }
       const priorityOrder = { high: 3, medium: 2, low: 1 };
-      const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 1;
-      const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 1;
+      const aPriority =
+        priorityOrder[a.priority as keyof typeof priorityOrder] || 1;
+      const bPriority =
+        priorityOrder[b.priority as keyof typeof priorityOrder] || 1;
       return bPriority - aPriority;
     });
   };
@@ -648,7 +753,7 @@ const Calendar: React.FC = () => {
       listId: taskData.listId || selectedTaskList,
       completed: false,
       createdAt: new Date().toISOString(),
-      userId: currentUser?.id || '',
+      userId: currentUser?.id || "",
     };
 
     const updatedTasks = [...personalTasks, newTaskObj];
@@ -657,27 +762,35 @@ const Calendar: React.FC = () => {
   };
 
   const handleUpdatePersonalTask = (taskId: string, updates: any) => {
-    const updatedTasks = personalTasks.map(task =>
-      task.id === taskId ? { ...task, ...updates } : task
+    const updatedTasks = personalTasks.map((task) =>
+      task.id === taskId ? { ...task, ...updates } : task,
     );
     saveTasks(updatedTasks);
   };
 
   const handleDeletePersonalTask = (taskId: string) => {
-    const updatedTasks = personalTasks.filter(task => task.id !== taskId);
+    const updatedTasks = personalTasks.filter((task) => task.id !== taskId);
     saveTasks(updatedTasks);
   };
 
   const getTasksCount = (listId: string) => {
-    return personalTasks.filter(task => task.listId === listId && !task.completed).length;
+    return personalTasks.filter(
+      (task) => task.listId === listId && !task.completed,
+    ).length;
   };
 
   // Rendering functions for calendar views
   const renderMonthView = () => {
-    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const firstDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    );
     const startDate = new Date(firstDay);
     const dayOfWeek = firstDay.getDay();
-    startDate.setDate(startDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    startDate.setDate(
+      startDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1),
+    );
 
     const days = [];
     const currentDateObj = new Date(startDate);
@@ -685,8 +798,9 @@ const Calendar: React.FC = () => {
 
     for (let i = 0; i < 42; i++) {
       const dateStr = toLocalDateStr(currentDateObj);
-      const dayEvents = events.filter(e => e.startDate === dateStr);
-      const isCurrentMonth = currentDateObj.getMonth() === currentDate.getMonth();
+      const dayEvents = events.filter((e) => e.startDate === dateStr);
+      const isCurrentMonth =
+        currentDateObj.getMonth() === currentDate.getMonth();
       const isTodayDate = dateStr === todayStr;
 
       days.push({
@@ -701,14 +815,17 @@ const Calendar: React.FC = () => {
       currentDateObj.setDate(currentDateObj.getDate() + 1);
     }
 
-    const weekDaysLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const weekDaysLabels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
     return (
       <div className="p-2 md:p-4">
         {/* Заголовки дней недели */}
         <div className="grid grid-cols-7 mb-1 md:mb-2">
           {weekDaysLabels.map((day, idx) => (
-            <div key={idx} className="py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-ink-muted">
+            <div
+              key={idx}
+              className="py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-ink-muted"
+            >
               <span className="hidden sm:inline">{day}</span>
               <span className="sm:hidden">{day.slice(0, 2)}</span>
             </div>
@@ -730,17 +847,17 @@ const Calendar: React.FC = () => {
                 setShowDayEventsModal(true);
               }}
               className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 cursor-pointer transition-all hover:bg-primary-50 ${
-                day.isCurrentMonth ? 'bg-white' : 'bg-surface-50'
+                day.isCurrentMonth ? "bg-white" : "bg-surface-50"
               }`}
             >
               <div className="flex items-center justify-center mb-1">
                 <span
                   className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full text-xs md:text-sm font-medium transition-colors ${
                     day.isToday
-                      ? 'bg-primary-600 text-white'
+                      ? "bg-primary-600 text-white"
                       : day.isCurrentMonth
-                      ? 'text-ink hover:bg-surface-100'
-                      : 'text-ink-light'
+                        ? "text-ink hover:bg-surface-100"
+                        : "text-ink-light"
                   }`}
                 >
                   {day.dayNumber}
@@ -750,7 +867,7 @@ const Calendar: React.FC = () => {
                 {day.dayEvents.slice(0, 2).map((event) => (
                   <div
                     key={event.id}
-                    className={`text-xs px-1 md:px-2 py-0.5 md:py-1 rounded-md truncate ${event.color || 'bg-primary-100 text-primary-700'} hidden sm:block`}
+                    className={`text-xs px-1 md:px-2 py-0.5 md:py-1 rounded-md truncate ${event.color || "bg-primary-100 text-primary-700"} hidden sm:block`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedEvent(event);
@@ -763,7 +880,7 @@ const Calendar: React.FC = () => {
                 {/* Task deadlines */}
                 {getTasksForDate(day.date)
                   .slice(0, 2 - day.dayEvents.length)
-                  .map(task => {
+                  .map((task) => {
                     const priorityConfig = getPriorityConfig(task.priority);
                     return (
                       <div
@@ -776,14 +893,19 @@ const Calendar: React.FC = () => {
                       </div>
                     );
                   })}
-                {(day.dayEvents.length + getTasksForDate(day.date).length) > 0 && (
+                {day.dayEvents.length + getTasksForDate(day.date).length >
+                  0 && (
                   <div className="text-xs text-ink-muted text-center sm:hidden">
                     {day.dayEvents.length + getTasksForDate(day.date).length}
                   </div>
                 )}
-                {(day.dayEvents.length + getTasksForDate(day.date).length) > 2 && (
+                {day.dayEvents.length + getTasksForDate(day.date).length >
+                  2 && (
                   <div className="text-xs text-ink-muted text-center hidden sm:block">
-                    +{day.dayEvents.length + getTasksForDate(day.date).length - 2}
+                    +
+                    {day.dayEvents.length +
+                      getTasksForDate(day.date).length -
+                      2}
                   </div>
                 )}
               </div>
@@ -821,11 +943,11 @@ const Calendar: React.FC = () => {
             return (
               <div key={index} className="p-3 text-center">
                 <div className="text-xs font-medium text-ink-muted uppercase">
-                  {day.toLocaleDateString('ru-RU', { weekday: 'short' })}
+                  {day.toLocaleDateString("ru-RU", { weekday: "short" })}
                 </div>
                 <div
                   className={`mt-1 w-10 h-10 mx-auto flex items-center justify-center rounded-full text-lg font-semibold ${
-                    isTodayDate ? 'bg-primary-600 text-white' : 'text-ink'
+                    isTodayDate ? "bg-primary-600 text-white" : "text-ink"
                   }`}
                 >
                   {day.getDate()}
@@ -837,46 +959,108 @@ const Calendar: React.FC = () => {
 
         {/* Сетка времени */}
         <div className="bg-surface-200 rounded-xl overflow-hidden">
-          {hours.map(hour => (
+          {hours.map((hour) => (
             <div key={hour} className="grid grid-cols-8 gap-px">
               <div className="bg-white p-2 text-right pr-3">
                 <span className="text-xs font-medium text-ink-muted">
-                  {hour.toString().padStart(2, '0')}:00
+                  {hour.toString().padStart(2, "0")}:00
                 </span>
               </div>
 
               {weekDaysArr.map((day, dayIndex) => {
                 const dayStr = toLocalDateStr(day);
                 const isTodayDate = dayStr === todayStr;
-                const dayEvents = getEventsForDate(day).filter(event => {
-                  if (!event.startTime) return false;
-                  const eventHour = parseInt(event.startTime.split(':')[0]);
-                  return eventHour === hour;
-                });
+
+                // events starting exactly this hour
+                const hourStartEvents = getEventsForDate(day).filter(
+                  (event) => {
+                    if (!event.startTime) return false;
+                    const eventHour = parseInt(event.startTime.split(":")[0]);
+                    return eventHour === hour;
+                  },
+                );
+
+                // events that continue through this hour (started earlier, end later)
+                const hourContinuingEvents = getEventsForDate(day).filter(
+                  (event) => {
+                    if (!event.startTime || !event.endTime) return false;
+                    const startHour = parseInt(event.startTime.split(":")[0]);
+                    const endHour = parseInt(event.endTime.split(":")[0]);
+                    const endMinute = parseInt(event.endTime.split(":")[1]);
+                    return (
+                      startHour < hour &&
+                      (endHour > hour || (endHour === hour && endMinute > 0))
+                    );
+                  },
+                );
+
+                // Add task deadlines to first hour column
+                const dayTaskDeadlines = hour === 8 ? getTasksForDate(day) : [];
 
                 return (
                   <div
                     key={dayIndex}
                     className={`bg-white p-1 min-h-[50px] border-l border-surface-100 hover:bg-primary-50 cursor-pointer transition-colors ${
-                      isTodayDate ? 'bg-primary-50/30' : ''
+                      isTodayDate ? "bg-primary-50/30" : ""
                     }`}
                     onClick={() => {
                       setSelectedDate(day);
+                      setSelectedHour(hour);
                       setShowCreateEvent(true);
                     }}
                   >
-                    {dayEvents.map((event) => (
+                    {dayTaskDeadlines.length > 0 && (
+                      <div className="mb-1 space-y-0.5">
+                        {dayTaskDeadlines.map((task) => {
+                          const priorityConfig = getPriorityConfig(
+                            task.priority,
+                          );
+                          return (
+                            <div
+                              key={task.id}
+                              className={`text-xs px-1 py-0.5 rounded-md truncate border-l-2 ${priorityConfig.color}`}
+                              title={`Дедлайн: ${task.title} (${task.project.name})`}
+                            >
+                              <i
+                                className={`${priorityConfig.icon} mr-1 text-xs`}
+                              ></i>
+                              <span className="text-xs">{task.key}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/** start and continuing events **/}
+                    {hourStartEvents.map((event) => (
                       <div
                         key={event.id}
-                        className={`text-xs px-2 py-1 rounded-md mb-1 cursor-pointer ${event.color || 'bg-primary-100 text-primary-700'}`}
-                        onClick={e => {
+                        className={`text-xs px-2 py-1 rounded-md mb-1 cursor-pointer ${event.color || "bg-primary-100 text-primary-700"}`}
+                        onClick={(e) => {
                           e.stopPropagation();
                           setSelectedEvent(event);
                           setShowEventModal(true);
                         }}
                       >
-                        <div className="font-medium truncate">{event.title}</div>
-                        <div className="opacity-75">{formatTime(event.startTime)}</div>
+                        <div className="font-medium truncate">
+                          {event.title}
+                        </div>
+                        <div className="opacity-75">
+                          {formatTime(event.startTime)}
+                        </div>
+                      </div>
+                    ))}
+                    {hourContinuingEvents.map((event) => (
+                      <div
+                        key={`cont-${event.id}`}
+                        className={`px-2 py-0.5 rounded text-xs opacity-60 mb-1 border-l-4 ${event.color || "bg-primary-100 text-primary-700"}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEvent(event);
+                          setShowEventModal(true);
+                        }}
+                      >
+                        ↓ {event.title}
                       </div>
                     ))}
                   </div>
@@ -890,7 +1074,9 @@ const Calendar: React.FC = () => {
   };
 
   const renderDayView = () => {
-    const hours = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+    const hours = [
+      6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+    ];
     const dayEvents = getEventsForDate(currentDate);
     const todayStr = toLocalDateStr(new Date());
     const currentDayStr = toLocalDateStr(currentDate);
@@ -903,20 +1089,23 @@ const Calendar: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div
               className={`w-14 h-14 flex flex-col items-center justify-center rounded-2xl ${
-                isTodayDate ? 'bg-primary-600 text-white' : 'bg-surface-100 text-ink'
+                isTodayDate
+                  ? "bg-primary-600 text-white"
+                  : "bg-surface-100 text-ink"
               }`}
             >
               <span className="text-xs font-medium uppercase">
-                {format(currentDate, 'EEE', { locale: ru })}
+                {format(currentDate, "EEE", { locale: ru })}
               </span>
               <span className="text-xl font-bold">{currentDate.getDate()}</span>
             </div>
             <div>
               <h3 className="text-lg font-semibold text-ink">
-                {format(currentDate, 'd MMMM yyyy', { locale: ru })}
+                {format(currentDate, "d MMMM yyyy", { locale: ru })}
               </h3>
               <p className="text-sm text-ink-muted">
-                {dayEvents.length} {dayEvents.length === 1 ? 'событие' : 'событий'}
+                {dayEvents.length}{" "}
+                {dayEvents.length === 1 ? "событие" : "событий"}
               </p>
             </div>
           </div>
@@ -938,29 +1127,33 @@ const Calendar: React.FC = () => {
 
         {/* Сетка времени */}
         <div className="bg-surface-200 rounded-xl overflow-hidden">
-          {hours.map(hour => {
+          {hours.map((hour) => {
             // События, которые начинаются в этом часе
-            const hourStartEvents = dayEvents.filter(event => {
+            const hourStartEvents = dayEvents.filter((event) => {
               if (!event.startTime) return false;
-              const eventStartHour = parseInt(event.startTime.split(':')[0]);
+              const eventStartHour = parseInt(event.startTime.split(":")[0]);
               return eventStartHour === hour;
             });
 
             // События, которые продолжаются с предыдущих часов
-            const hourContinuingEvents = dayEvents.filter(event => {
+            const hourContinuingEvents = dayEvents.filter((event) => {
               if (!event.startTime || !event.endTime) return false;
-              const eventStartHour = parseInt(event.startTime.split(':')[0]);
-              const eventEndHour = parseInt(event.endTime.split(':')[0]);
-              const eventEndMinute = parseInt(event.endTime.split(':')[1]);
+              const eventStartHour = parseInt(event.startTime.split(":")[0]);
+              const eventEndHour = parseInt(event.endTime.split(":")[0]);
+              const eventEndMinute = parseInt(event.endTime.split(":")[1]);
               // Событие продолжается, если оно началось раньше и еще не закончилось
-              return eventStartHour < hour && (eventEndHour > hour || (eventEndHour === hour && eventEndMinute > 0));
+              return (
+                eventStartHour < hour &&
+                (eventEndHour > hour ||
+                  (eventEndHour === hour && eventEndMinute > 0))
+              );
             });
 
             return (
               <div key={hour} className="grid grid-cols-12 gap-px">
                 <div className="col-span-1 bg-white p-3 text-right">
                   <span className="text-sm font-medium text-ink-muted">
-                    {hour.toString().padStart(2, '0')}:00
+                    {hour.toString().padStart(2, "0")}:00
                   </span>
                 </div>
 
@@ -969,22 +1162,25 @@ const Calendar: React.FC = () => {
                   onClick={() => setShowCreateEvent(true)}
                 >
                   {/* События, которые начинаются в этом часе - с полной высотой */}
-                  {hourStartEvents.map(event => {
-                    const startHour = parseInt(event.startTime.split(':')[0]);
-                    const startMinute = parseInt(event.startTime.split(':')[1]);
-                    const endHour = parseInt(event.endTime.split(':')[0]);
-                    const endMinute = parseInt(event.endTime.split(':')[1]);
+                  {hourStartEvents.map((event) => {
+                    const startHour = parseInt(event.startTime.split(":")[0]);
+                    const startMinute = parseInt(event.startTime.split(":")[1]);
+                    const endHour = parseInt(event.endTime.split(":")[0]);
+                    const endMinute = parseInt(event.endTime.split(":")[1]);
 
                     // Вычисляем продолжительность в минутах
-                    const durationMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
-                    const heightInPx = Math.max(40, (durationMinutes / 60) * 60); // 60px на час
+                    const durationMinutes =
+                      endHour * 60 + endMinute - (startHour * 60 + startMinute);
+                    const heightInPx = Math.max(
+                      40,
+                      (durationMinutes / 60) * 60,
+                    ); // 60px на час
 
                     return (
                       <div
                         key={event.id}
-                        className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow mb-2 ${event.color || 'bg-primary-100 text-primary-700'}`}
-                        style={{ minHeight: `${heightInPx}px` }}
-                        onClick={e => {
+                        className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow mb-2 ${event.color || "bg-primary-100 text-primary-700"}`}
+                        onClick={(e) => {
                           e.stopPropagation();
                           setSelectedEvent(event);
                           setShowEventModal(true);
@@ -993,22 +1189,25 @@ const Calendar: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="font-semibold">{event.title}</div>
                           <div className="text-sm opacity-75">
-                            {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                            {formatTime(event.startTime)} -{" "}
+                            {formatTime(event.endTime)}
                           </div>
                         </div>
                         {event.description && (
-                          <div className="text-sm opacity-75 mt-1">{event.description}</div>
+                          <div className="text-sm opacity-75 mt-1">
+                            {event.description}
+                          </div>
                         )}
                       </div>
                     );
                   })}
 
                   {/* Индикатор продолжения для событий с предыдущих часов */}
-                  {hourContinuingEvents.map(event => (
+                  {hourContinuingEvents.map((event) => (
                     <div
                       key={`continuing-${event.id}`}
-                      className={`px-3 py-1 rounded text-xs opacity-60 mb-1 border-l-4 ${event.color || 'bg-primary-100 text-primary-700'}`}
-                      onClick={e => {
+                      className={`px-3 py-1 rounded text-xs opacity-60 mb-1 border-l-4 ${event.color || "bg-primary-100 text-primary-700"}`}
+                      onClick={(e) => {
                         e.stopPropagation();
                         setSelectedEvent(event);
                         setShowEventModal(true);
@@ -1029,26 +1228,38 @@ const Calendar: React.FC = () => {
   // Rendering functions for tasks view
   const renderTasksView = () => {
     const filteredTasks = getFilteredPersonalTasks();
-    const currentList = taskLists.find(list => list.id === selectedTaskList);
+    const currentList = taskLists.find((list) => list.id === selectedTaskList);
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`w-4 h-4 rounded-full bg-${currentList?.color}-500`}></div>
-            <h2 className="text-xl font-semibold text-ink">{currentList?.name}</h2>
+            <div
+              className={`w-4 h-4 rounded-full bg-${currentList?.color}-500`}
+            ></div>
+            <h2 className="text-xl font-semibold text-ink">
+              {currentList?.name}
+            </h2>
             <span className="text-sm text-gray-500">
-              ({filteredTasks.filter(t => !t.completed).length} активных)
+              ({filteredTasks.filter((t) => !t.completed).length} активных)
             </span>
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={() => setShowTaskModal(true)} size="sm">
+            <Button
+              variant="outline"
+              onClick={() => setShowTaskModal(true)}
+              size="sm"
+            >
               <i className="ri-add-line mr-1"></i>
               Добавить задачу
             </Button>
 
-            <Button variant="outline" onClick={() => setShowListModal(true)} size="sm">
+            <Button
+              variant="outline"
+              onClick={() => setShowListModal(true)}
+              size="sm"
+            >
               <i className="ri-add-line mr-1"></i>
               Новый список
             </Button>
@@ -1059,23 +1270,29 @@ const Calendar: React.FC = () => {
           <div className="w-64 bg-white rounded-2xl shadow-soft border border-surface-200 p-4">
             <h3 className="font-semibold text-ink mb-3">Мои списки</h3>
             <div className="space-y-1">
-              {taskLists.map(list => (
+              {taskLists.map((list) => (
                 <div
                   key={list.id}
                   className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                    selectedTaskList === list.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                    selectedTaskList === list.id
+                      ? "bg-blue-50 text-blue-700"
+                      : "hover:bg-gray-50"
                   }`}
                   onClick={() => setSelectedTaskList(list.id)}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full bg-${list.color}-500`}></div>
+                    <div
+                      className={`w-3 h-3 rounded-full bg-${list.color}-500`}
+                    ></div>
                     <span className="text-sm font-medium">{list.name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500">{getTasksCount(list.id)}</span>
+                    <span className="text-xs text-gray-500">
+                      {getTasksCount(list.id)}
+                    </span>
                     {!list.isDefault && (
                       <button
-                        onClick={e => {
+                        onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteTaskList(list.id);
                         }}
@@ -1095,17 +1312,35 @@ const Calendar: React.FC = () => {
               <div className="border-b border-surface-200 p-4">
                 <div className="flex space-x-1">
                   {[
-                    { key: 'all', label: 'Все', count: personalTasks.filter(t => t.listId === selectedTaskList).length },
-                    { key: 'pending', label: 'Ожидающие', count: personalTasks.filter(t => t.listId === selectedTaskList && !t.completed).length },
-                    { key: 'completed', label: 'Завершенные', count: personalTasks.filter(t => t.listId === selectedTaskList && t.completed).length },
-                  ].map(filterItem => (
+                    {
+                      key: "all",
+                      label: "Все",
+                      count: personalTasks.filter(
+                        (t) => t.listId === selectedTaskList,
+                      ).length,
+                    },
+                    {
+                      key: "pending",
+                      label: "Ожидающие",
+                      count: personalTasks.filter(
+                        (t) => t.listId === selectedTaskList && !t.completed,
+                      ).length,
+                    },
+                    {
+                      key: "completed",
+                      label: "Завершенные",
+                      count: personalTasks.filter(
+                        (t) => t.listId === selectedTaskList && t.completed,
+                      ).length,
+                    },
+                  ].map((filterItem) => (
                     <button
                       key={filterItem.key}
                       onClick={() => setTaskFilter(filterItem.key as any)}
                       className={`px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
                         taskFilter === filterItem.key
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'text-ink-muted hover:text-ink hover:bg-surface-100'
+                          ? "bg-primary-100 text-primary-700"
+                          : "text-ink-muted hover:text-ink hover:bg-surface-100"
                       }`}
                     >
                       {filterItem.label} ({filterItem.count})
@@ -1116,27 +1351,33 @@ const Calendar: React.FC = () => {
 
               <div className="divide-y divide-surface-100">
                 {filteredTasks.length > 0 ? (
-                  filteredTasks.map(task => (
+                  filteredTasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors ${task.completed ? 'opacity-60' : ''}`}
+                      className={`p-4 hover:bg-gray-50 transition-colors ${task.completed ? "opacity-60" : ""}`}
                     >
                       <div className="flex items-start space-x-3">
                         <button
-                          onClick={() => handleUpdatePersonalTask(task.id, { completed: !task.completed })}
+                          onClick={() =>
+                            handleUpdatePersonalTask(task.id, {
+                              completed: !task.completed,
+                            })
+                          }
                           className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer ${
                             task.completed
-                              ? `bg-${getListColor(task.listId || '')}-500 border-${getListColor(task.listId || '')}-500`
-                              : `border-gray-300 hover:border-${getListColor(task.listId || '')}-500`
+                              ? `bg-${getListColor(task.listId || "")}-500 border-${getListColor(task.listId || "")}-500`
+                              : `border-gray-300 hover:border-${getListColor(task.listId || "")}-500`
                           }`}
                         >
-                          {task.completed && <i className="ri-check-line text-white text-sm"></i>}
+                          {task.completed && (
+                            <i className="ri-check-line text-white text-sm"></i>
+                          )}
                         </button>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <h4
-                              className={`font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}
+                              className={`font-medium ${task.completed ? "line-through text-gray-500" : "text-gray-900"}`}
                             >
                               {task.title}
                             </h4>
@@ -1144,29 +1385,32 @@ const Calendar: React.FC = () => {
                             <div className="flex items-center space-x-2">
                               <span
                                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  task.priority === 'high'
-                                    ? 'bg-rose-100 text-rose-700'
-                                    : task.priority === 'medium'
-                                    ? 'bg-amber-100 text-amber-700'
-                                    : 'bg-emerald-100 text-emerald-700'
+                                  task.priority === "high"
+                                    ? "bg-rose-100 text-rose-700"
+                                    : task.priority === "medium"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : "bg-emerald-100 text-emerald-700"
                                 }`}
                               >
-                                {task.priority === 'high'
-                                  ? 'Высокий'
-                                  : task.priority === 'medium'
-                                  ? 'Средний'
-                                  : 'Низкий'}
+                                {task.priority === "high"
+                                  ? "Высокий"
+                                  : task.priority === "medium"
+                                    ? "Средний"
+                                    : "Низкий"}
                               </span>
 
                               {task.dueDate && (
                                 <span
                                   className={`text-xs ${
-                                    new Date(task.dueDate) < new Date() && !task.completed
-                                      ? 'text-red-600 font-medium'
-                                      : 'text-gray-500'
+                                    new Date(task.dueDate) < new Date() &&
+                                    !task.completed
+                                      ? "text-red-600 font-medium"
+                                      : "text-gray-500"
                                   }`}
                                 >
-                                  {format(new Date(task.dueDate), 'd MMM', { locale: ru })}
+                                  {format(new Date(task.dueDate), "d MMM", {
+                                    locale: ru,
+                                  })}
                                 </span>
                               )}
 
@@ -1181,7 +1425,9 @@ const Calendar: React.FC = () => {
                                   <i className="ri-edit-line text-sm"></i>
                                 </button>
                                 <button
-                                  onClick={() => handleDeletePersonalTask(task.id)}
+                                  onClick={() =>
+                                    handleDeletePersonalTask(task.id)
+                                  }
                                   className="text-gray-400 hover:text-red-500 cursor-pointer"
                                 >
                                   <i className="ri-delete-bin-line text-sm"></i>
@@ -1190,13 +1436,19 @@ const Calendar: React.FC = () => {
                             </div>
                           </div>
 
-                          {task.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{task.description}</p>}
+                          {task.description && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {task.description}
+                            </p>
+                          )}
 
                           <div className="flex items-center space-x-2 mt-2">
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs bg-${getListColor(task.listId || '')}-100 text-${getListColor(task.listId || '')}-800`}
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs bg-${getListColor(task.listId || "")}-100 text-${getListColor(task.listId || "")}-800`}
                             >
-                              <i className={`${getCategoryIcon(task.category)} mr-1`}></i>
+                              <i
+                                className={`${getCategoryIcon(task.category)} mr-1`}
+                              ></i>
                               {getCategoryName(task.category)}
                             </span>
                           </div>
@@ -1210,12 +1462,14 @@ const Calendar: React.FC = () => {
                       <i className="ri-task-line text-ink-light text-2xl"></i>
                     </div>
                     <h3 className="text-lg font-semibold text-ink mb-2">
-                      {taskFilter === 'completed' ? 'Нет завершенных задач' : 'Список пуст'}
+                      {taskFilter === "completed"
+                        ? "Нет завершенных задач"
+                        : "Список пуст"}
                     </h3>
                     <p className="text-ink-muted">
-                      {taskFilter === 'completed'
-                        ? 'Завершенные задачи появятся здесь'
-                        : 'Добавьте первую задачу в этот список'}
+                      {taskFilter === "completed"
+                        ? "Завершенные задачи появятся здесь"
+                        : "Добавьте первую задачу в этот список"}
                     </p>
                   </div>
                 )}
@@ -1237,61 +1491,85 @@ const Calendar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">Календарь</h1>
-            <p className="text-ink-muted mt-1 text-sm md:text-base">Управляйте своим временем и задачами</p>
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">
+              Календарь
+            </h1>
+            <p className="text-ink-muted mt-1 text-sm md:text-base">
+              Управляйте своим временем и задачами
+            </p>
           </div>
 
           <div className="flex items-center w-full sm:w-auto">
             <div className="flex gap-1 bg-surface-100 rounded-xl p-1 w-full sm:w-auto">
               <button
-                onClick={() => setMode('calendar')}
+                onClick={() => setMode("calendar")}
                 className={`flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
-                  mode === 'calendar' ? 'bg-white text-ink shadow-soft' : 'text-ink-muted hover:text-ink'
+                  mode === "calendar"
+                    ? "bg-white text-ink shadow-soft"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
                 <i className="ri-calendar-line mr-1 md:mr-2"></i>
                 Календарь
               </button>
               <button
-                onClick={() => setMode('tasks')}
+                onClick={() => setMode("tasks")}
                 className={`flex-1 sm:flex-none px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
-                  mode === 'tasks' ? 'bg-white text-ink shadow-soft' : 'text-ink-muted hover:text-ink'
+                  mode === "tasks"
+                    ? "bg-white text-ink shadow-soft"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
                 <i className="ri-task-line mr-1 md:mr-2"></i>
-                <span className="hidden sm:inline">Задачи ({personalTasks.filter(t => !t.completed).length})</span>
+                <span className="hidden sm:inline">
+                  Задачи ({personalTasks.filter((t) => !t.completed).length})
+                </span>
                 <span className="sm:hidden">Задачи</span>
               </button>
             </div>
           </div>
         </div>
 
-        {mode === 'calendar' ? (
+        {mode === "calendar" ? (
           <div className="space-y-4 md:space-y-6">
             <div className="bg-white rounded-2xl shadow-soft border border-surface-200 p-4 md:p-6">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                 <div className="flex items-center justify-between md:justify-start gap-2 md:gap-4">
-                  <Button variant="outline" onClick={() => setCurrentDate(new Date())} size="sm">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentDate(new Date())}
+                    size="sm"
+                  >
                     Сегодня
                   </Button>
 
                   <div className="flex items-center gap-1 md:gap-2">
-                    <button onClick={() => navigateMonth('prev')} className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <button
+                      onClick={() => navigateMonth("prev")}
+                      className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
                       <i className="ri-arrow-left-s-line text-lg"></i>
                     </button>
                     <h2 className="text-base md:text-xl font-semibold text-ink min-w-[140px] md:min-w-[200px] text-center">
-                      {view === 'week' ? (() => {
-                        const startOfWeek = new Date(currentDate);
-                        const dow = startOfWeek.getDay();
-                        startOfWeek.setDate(startOfWeek.getDate() - (dow === 0 ? 6 : dow - 1));
-                        const endOfWeek = new Date(startOfWeek);
-                        endOfWeek.setDate(endOfWeek.getDate() + 6);
-                        return `${format(startOfWeek, 'd MMM', { locale: ru })} – ${format(endOfWeek, 'd MMM yyyy', { locale: ru })}`;
-                      })() : view === 'day'
-                        ? format(currentDate, 'd MMMM yyyy', { locale: ru })
-                        : format(currentDate, 'LLLL yyyy', { locale: ru })}
+                      {view === "week"
+                        ? (() => {
+                            const startOfWeek = new Date(currentDate);
+                            const dow = startOfWeek.getDay();
+                            startOfWeek.setDate(
+                              startOfWeek.getDate() - (dow === 0 ? 6 : dow - 1),
+                            );
+                            const endOfWeek = new Date(startOfWeek);
+                            endOfWeek.setDate(endOfWeek.getDate() + 6);
+                            return `${format(startOfWeek, "d MMM", { locale: ru })} – ${format(endOfWeek, "d MMM yyyy", { locale: ru })}`;
+                          })()
+                        : view === "day"
+                          ? format(currentDate, "d MMMM yyyy", { locale: ru })
+                          : format(currentDate, "LLLL yyyy", { locale: ru })}
                     </h2>
-                    <button onClick={() => navigateMonth('next')} className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <button
+                      onClick={() => navigateMonth("next")}
+                      className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
                       <i className="ri-arrow-right-s-line text-lg"></i>
                     </button>
                   </div>
@@ -1299,21 +1577,39 @@ const Calendar: React.FC = () => {
 
                 <div className="flex items-center gap-2 md:gap-3">
                   <div className="flex gap-1 bg-surface-100 rounded-xl p-1 flex-1 md:flex-none">
-                    {['month', 'week', 'day'].map(viewType => (
+                    {["month", "week", "day"].map((viewType) => (
                       <button
                         key={viewType}
                         onClick={() => setView(viewType as any)}
                         className={`px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap flex-1 md:flex-none ${
-                          view === viewType ? 'bg-white text-ink shadow-soft' : 'text-ink-muted hover:text-ink'
+                          view === viewType
+                            ? "bg-white text-ink shadow-soft"
+                            : "text-ink-muted hover:text-ink"
                         }`}
                       >
-                        <span className="hidden sm:inline">{viewType === 'month' ? 'Месяц' : viewType === 'week' ? 'Неделя' : 'День'}</span>
-                        <span className="sm:hidden">{viewType === 'month' ? 'М' : viewType === 'week' ? 'Н' : 'Д'}</span>
+                        <span className="hidden sm:inline">
+                          {viewType === "month"
+                            ? "Месяц"
+                            : viewType === "week"
+                              ? "Неделя"
+                              : "День"}
+                        </span>
+                        <span className="sm:hidden">
+                          {viewType === "month"
+                            ? "М"
+                            : viewType === "week"
+                              ? "Н"
+                              : "Д"}
+                        </span>
                       </button>
                     ))}
                   </div>
 
-                  <Button onClick={() => setShowCreateEvent(true)} size="sm" className="whitespace-nowrap">
+                  <Button
+                    onClick={() => setShowCreateEvent(true)}
+                    size="sm"
+                    className="whitespace-nowrap"
+                  >
                     <i className="ri-add-line md:mr-2"></i>
                     <span className="hidden md:inline">Создать событие</span>
                   </Button>
@@ -1322,9 +1618,9 @@ const Calendar: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-2xl shadow-soft border border-surface-200 overflow-hidden">
-              {view === 'month' && renderMonthView()}
-              {view === 'week' && renderWeekView()}
-              {view === 'day' && renderDayView()}
+              {view === "month" && renderMonthView()}
+              {view === "week" && renderWeekView()}
+              {view === "day" && renderDayView()}
             </div>
           </div>
         ) : (
@@ -1339,6 +1635,7 @@ const Calendar: React.FC = () => {
         onClose={() => {
           setShowCreateEvent(false);
           setSelectedDate(null);
+          setSelectedHour(null);
         }}
         title="Создать событие"
         size="md"
@@ -1349,14 +1646,14 @@ const Calendar: React.FC = () => {
             const formData = new FormData(e.currentTarget);
             const newEventData = {
               id: Date.now().toString(),
-              title: formData.get('title') as string,
-              description: formData.get('description') as string,
-              date: formData.get('date') as string,
-              startTime: formData.get('startTime') as string,
-              endTime: formData.get('endTime') as string,
-              type: formData.get('type') as string,
-              color: formData.get('color') as string,
-              reminderTime: formData.get('reminderTime') as string,
+              title: formData.get("title") as string,
+              description: formData.get("description") as string,
+              date: formData.get("date") as string,
+              startTime: formData.get("startTime") as string,
+              endTime: formData.get("endTime") as string,
+              type: formData.get("type") as string,
+              color: formData.get("color") as string,
+              reminderTime: formData.get("reminderTime") as string,
             };
             handleCreateEvent(newEventData);
           }}
@@ -1387,7 +1684,11 @@ const Calendar: React.FC = () => {
               label="Дата"
               type="date"
               required
-              defaultValue={selectedDate ? toLocalDateStr(selectedDate) : toLocalDateStr(new Date())}
+              defaultValue={
+                selectedDate
+                  ? toLocalDateStr(selectedDate)
+                  : toLocalDateStr(new Date())
+              }
             />
 
             <div>
@@ -1413,6 +1714,11 @@ const Calendar: React.FC = () => {
               label="Время начала"
               type="time"
               required
+              defaultValue={
+                selectedHour
+                  ? `${String(selectedHour).padStart(2, "0")}:00`
+                  : "09:00"
+              }
             />
 
             <Input
@@ -1420,6 +1726,11 @@ const Calendar: React.FC = () => {
               label="Время окончания"
               type="time"
               required
+              defaultValue={
+                selectedHour
+                  ? `${String(selectedHour + 1).padStart(2, "0")}:00`
+                  : "10:00"
+              }
             />
           </div>
 
@@ -1431,11 +1742,11 @@ const Calendar: React.FC = () => {
             <input type="hidden" name="color" value={selectedColor} />
             <div className="flex space-x-2">
               {[
-                { value: 'bg-sky-100 text-sky-700', label: 'Синий' },
-                { value: 'bg-emerald-100 text-emerald-700', label: 'Зеленый' },
-                { value: 'bg-rose-100 text-rose-700', label: 'Красный' },
-                { value: 'bg-violet-100 text-violet-700', label: 'Фиолетовый' },
-                { value: 'bg-amber-100 text-amber-700', label: 'Оранжевый' },
+                { value: "bg-sky-100 text-sky-700", label: "Синий" },
+                { value: "bg-emerald-100 text-emerald-700", label: "Зеленый" },
+                { value: "bg-rose-100 text-rose-700", label: "Красный" },
+                { value: "bg-violet-100 text-violet-700", label: "Фиолетовый" },
+                { value: "bg-amber-100 text-amber-700", label: "Оранжевый" },
               ].map((color) => (
                 <button
                   key={color.value}
@@ -1444,11 +1755,13 @@ const Calendar: React.FC = () => {
                   onClick={() => setSelectedColor(color.value)}
                   className={`w-8 h-8 rounded-full ${color.value} flex items-center justify-center transition-all ${
                     selectedColor === color.value
-                      ? 'ring-2 ring-offset-2 ring-primary-500 scale-110'
-                      : 'opacity-60 hover:opacity-100 hover:scale-105'
+                      ? "ring-2 ring-offset-2 ring-primary-500 scale-110"
+                      : "opacity-60 hover:opacity-100 hover:scale-105"
                   }`}
                 >
-                  {selectedColor === color.value && <i className="ri-check-line text-sm"></i>}
+                  {selectedColor === color.value && (
+                    <i className="ri-check-line text-sm"></i>
+                  )}
                 </button>
               ))}
             </div>
@@ -1495,14 +1808,20 @@ const Calendar: React.FC = () => {
       <Modal
         isOpen={showDayEventsModal}
         onClose={() => setShowDayEventsModal(false)}
-        title={selectedDayEvents.date ? format(selectedDayEvents.date, 'd MMMM yyyy', { locale: ru }) : 'События дня'}
+        title={
+          selectedDayEvents.date
+            ? format(selectedDayEvents.date, "d MMMM yyyy", { locale: ru })
+            : "События дня"
+        }
         size="md"
       >
         <div className="space-y-4">
           {/* События */}
           {selectedDayEvents.events.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-ink-muted mb-2">События</h3>
+              <h3 className="text-sm font-semibold text-ink-muted mb-2">
+                События
+              </h3>
               <div className="space-y-2">
                 {selectedDayEvents.events
                   .sort((a, b) => {
@@ -1511,10 +1830,10 @@ const Calendar: React.FC = () => {
                     if (!b.startTime) return 1;
                     return a.startTime.localeCompare(b.startTime);
                   })
-                  .map(event => (
+                  .map((event) => (
                     <div
                       key={event.id}
-                      className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow ${event.color || 'bg-primary-100 text-primary-700'}`}
+                      className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow ${event.color || "bg-primary-100 text-primary-700"}`}
                       onClick={() => {
                         setSelectedEvent(event);
                         setShowEventModal(true);
@@ -1525,11 +1844,16 @@ const Calendar: React.FC = () => {
                         <div className="font-semibold">{event.title}</div>
                         {event.startTime && event.endTime && (
                           <div className="text-sm opacity-75">
-                            {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                            {formatTime(event.startTime)} -{" "}
+                            {formatTime(event.endTime)}
                           </div>
                         )}
                       </div>
-                      {event.description && <div className="text-sm opacity-75 mt-1">{event.description}</div>}
+                      {event.description && (
+                        <div className="text-sm opacity-75 mt-1">
+                          {event.description}
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
@@ -1539,9 +1863,11 @@ const Calendar: React.FC = () => {
           {/* Дедлайны задач */}
           {selectedDayEvents.tasks.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-ink-muted mb-2">Дедлайны задач</h3>
+              <h3 className="text-sm font-semibold text-ink-muted mb-2">
+                Дедлайны задач
+              </h3>
               <div className="space-y-2">
-                {selectedDayEvents.tasks.map(task => {
+                {selectedDayEvents.tasks.map((task) => {
                   const priorityConfig = getPriorityConfig(task.priority);
                   return (
                     <div
@@ -1553,9 +1879,13 @@ const Calendar: React.FC = () => {
                           <i className={`${priorityConfig.icon} mr-2`}></i>
                           {task.key}: {task.title}
                         </div>
-                        <span className="text-xs opacity-75">{priorityConfig.label}</span>
+                        <span className="text-xs opacity-75">
+                          {priorityConfig.label}
+                        </span>
                       </div>
-                      <div className="text-sm opacity-75 mt-1">{task.project.name}</div>
+                      <div className="text-sm opacity-75 mt-1">
+                        {task.project.name}
+                      </div>
                     </div>
                   );
                 })}
@@ -1563,15 +1893,20 @@ const Calendar: React.FC = () => {
             </div>
           )}
 
-          {selectedDayEvents.events.length === 0 && selectedDayEvents.tasks.length === 0 && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i className="ri-calendar-line text-ink-light text-2xl"></i>
+          {selectedDayEvents.events.length === 0 &&
+            selectedDayEvents.tasks.length === 0 && (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <i className="ri-calendar-line text-ink-light text-2xl"></i>
+                </div>
+                <h3 className="text-lg font-semibold text-ink mb-2">
+                  Нет событий
+                </h3>
+                <p className="text-ink-muted">
+                  В этот день пока нет запланированных событий
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-ink mb-2">Нет событий</h3>
-              <p className="text-ink-muted">В этот день пока нет запланированных событий</p>
-            </div>
-          )}
+            )}
 
           <div className="pt-4 border-t border-surface-200">
             <Button
@@ -1607,11 +1942,15 @@ const Calendar: React.FC = () => {
           setShowTaskModal(false);
           setSelectedTask(null);
         }}
-        onSubmit={selectedTask ? (taskData: any) => {
-          handleUpdatePersonalTask(selectedTask.id, taskData);
-          setShowTaskModal(false);
-          setSelectedTask(null);
-        } : handleCreatePersonalTask}
+        onSubmit={
+          selectedTask
+            ? (taskData: any) => {
+                handleUpdatePersonalTask(selectedTask.id, taskData);
+                setShowTaskModal(false);
+                setSelectedTask(null);
+              }
+            : handleCreatePersonalTask
+        }
         task={selectedTask}
         taskLists={taskLists}
         selectedListId={selectedTaskList}

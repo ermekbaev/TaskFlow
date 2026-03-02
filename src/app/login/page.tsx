@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/base/Button';
-import Input from '@/components/base/Input';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import Button from "@/components/base/Button";
+import Input from "@/components/base/Input";
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,18 +20,20 @@ const Login: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       await login(formData.email, formData.password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка при входе');
+      setError(
+        err instanceof Error ? err.message : "Произошла ошибка при входе",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -51,8 +53,12 @@ const Login: React.FC = () => {
             <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-glow transform hover:scale-105 transition-transform duration-300">
               <i className="ri-dashboard-line text-white text-4xl"></i>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">TaskFlow</h1>
-            <p className="text-ink-muted mt-3 text-lg">Система управления IT-проектами</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">
+              QuantumTask
+            </h1>
+            <p className="text-ink-muted mt-3 text-lg">
+              Система управления IT-проектами
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -96,15 +102,18 @@ const Login: React.FC = () => {
                   Вход...
                 </div>
               ) : (
-                'Войти в систему'
+                "Войти в систему"
               )}
             </Button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-surface-200 text-center">
             <p className="text-sm text-ink-light">
-              Нет аккаунта?{' '}
-              <Link href="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+              Нет аккаунта?{" "}
+              <Link
+                href="/register"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
                 Зарегистрируйтесь
               </Link>
             </p>

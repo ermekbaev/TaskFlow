@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Button from '@/components/base/Button';
+import React, { useState, useEffect } from "react";
+import Button from "@/components/base/Button";
 
 interface ActivityAttachment {
   id: string;
@@ -33,23 +33,27 @@ interface TaskActivityTimelineProps {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  status: 'Статус',
-  priority: 'Приоритет',
-  title: 'Название',
-  description: 'Описание',
-  assigneeId: 'Исполнитель',
-  dueDate: 'Срок выполнения',
-  startDate: 'Дата начала',
-  expectedHours: 'Ожидаемые трудозатраты',
-  taskType: 'Тип задачи',
-  acceptanceStatus: 'Статус приёмки',
+  status: "Статус",
+  priority: "Приоритет",
+  title: "Название",
+  description: "Описание",
+  assigneeId: "Исполнитель",
+  dueDate: "Срок выполнения",
+  startDate: "Дата начала",
+  expectedHours: "Ожидаемые трудозатраты",
+  taskType: "Тип задачи",
+  acceptanceStatus: "Статус приёмки",
 };
 
-const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, refreshKey }) => {
+const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({
+  taskId,
+  refreshKey,
+}) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [commentText, setCommentText] = useState('');
+  const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [users, setUsers] = useState<Record<string, { name: string }>>({});
 
   const fetchActivities = async () => {
     try {
@@ -59,11 +63,32 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
         setActivities(data.activities || []);
       }
     } catch (error) {
-      console.error('Error fetching activities:', error);
+      console.error("Error fetching activities:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/users");
+      if (res.ok) {
+        const data = await res.json();
+        const usersMap: Record<string, { name: string }> = {};
+        (data.users || []).forEach((user: any) => {
+          usersMap[user.id] = { name: user.name };
+        });
+        setUsers(usersMap);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchActivities();
@@ -75,16 +100,16 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
     setSubmitting(true);
     try {
       const res = await fetch(`/api/tasks/${taskId}/activity`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'comment', comment: commentText.trim() }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "comment", comment: commentText.trim() }),
       });
       if (res.ok) {
-        setCommentText('');
+        setCommentText("");
         fetchActivities();
       }
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error("Error adding comment:", error);
     } finally {
       setSubmitting(false);
     }
@@ -98,15 +123,19 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
     const diffH = Math.floor(diffMs / 3600000);
     const diffD = Math.floor(diffMs / 86400000);
 
-    if (diffMin < 1) return 'Только что';
+    if (diffMin < 1) return "Только что";
     if (diffMin < 60) return `${diffMin} мин. назад`;
     if (diffH < 24) return `${diffH} ч. назад`;
     if (diffD < 7) return `${diffD} дн. назад`;
-    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const formatWorkDate = (dateStr: string) => {
-    const parts = dateStr.split('-');
+    const parts = dateStr.split("-");
     if (parts.length === 3) {
       return `${parts[2]}.${parts[1]}.${parts[0]}`;
     }
@@ -115,70 +144,109 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'comment': return 'ri-chat-3-line';
-      case 'status_change': return 'ri-arrow-left-right-line';
-      case 'field_change': return 'ri-edit-line';
-      case 'reassign': return 'ri-user-shared-line';
-      case 'time_entry': return 'ri-time-line';
-      case 'created': return 'ri-add-circle-line';
-      default: return 'ri-information-line';
+      case "comment":
+        return "ri-chat-3-line";
+      case "status_change":
+        return "ri-arrow-left-right-line";
+      case "field_change":
+        return "ri-edit-line";
+      case "reassign":
+        return "ri-user-shared-line";
+      case "time_entry":
+        return "ri-time-line";
+      case "created":
+        return "ri-add-circle-line";
+      default:
+        return "ri-information-line";
     }
   };
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'comment': return 'bg-blue-100 text-blue-600';
-      case 'status_change': return 'bg-amber-100 text-amber-600';
-      case 'field_change': return 'bg-slate-100 text-slate-600';
-      case 'reassign': return 'bg-purple-100 text-purple-600';
-      case 'time_entry': return 'bg-emerald-100 text-emerald-600';
-      case 'created': return 'bg-green-100 text-green-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case "comment":
+        return "bg-blue-100 text-blue-600";
+      case "status_change":
+        return "bg-amber-100 text-amber-600";
+      case "field_change":
+        return "bg-slate-100 text-slate-600";
+      case "reassign":
+        return "bg-purple-100 text-purple-600";
+      case "time_entry":
+        return "bg-emerald-100 text-emerald-600";
+      case "created":
+        return "bg-green-100 text-green-600";
+      default:
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   const renderActivityContent = (activity: Activity) => {
+    const formatFieldValue = (field: string, value: string | null) => {
+      if (!value) return "—";
+      if (field === "assigneeId") {
+        return users[value]?.name || value;
+      }
+      return value;
+    };
+
     switch (activity.type) {
-      case 'comment':
+      case "comment":
         return (
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{activity.comment}</p>
-        );
-      case 'status_change':
-        return (
-          <p className="text-sm text-gray-600">
-            Изменил статус: <span className="font-medium">{activity.oldValue}</span> &rarr; <span className="font-medium">{activity.newValue}</span>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+            {activity.comment}
           </p>
         );
-      case 'field_change':
+      case "status_change":
         return (
           <p className="text-sm text-gray-600">
-            Изменил {FIELD_LABELS[activity.field || ''] || activity.field}:{' '}
-            <span className="font-medium">{activity.oldValue || '—'}</span> &rarr;{' '}
-            <span className="font-medium">{activity.newValue || '—'}</span>
+            Изменил статус:{" "}
+            <span className="font-medium">{activity.oldValue}</span> &rarr;{" "}
+            <span className="font-medium">{activity.newValue}</span>
           </p>
         );
-      case 'reassign':
+      case "field_change":
+        return (
+          <p className="text-sm text-gray-600">
+            Изменил {FIELD_LABELS[activity.field || ""] || activity.field}:{" "}
+            <span className="font-medium">
+              {formatFieldValue(activity.field || "", activity.oldValue)}
+            </span>{" "}
+            &rarr;{" "}
+            <span className="font-medium">
+              {formatFieldValue(activity.field || "", activity.newValue)}
+            </span>
+          </p>
+        );
+      case "reassign":
         return (
           <div>
             <p className="text-sm text-gray-600">Переназначил задачу</p>
             {activity.comment && (
-              <p className="text-sm text-gray-500 italic mt-1">{activity.comment}</p>
+              <p className="text-sm text-gray-500 italic mt-1">
+                {activity.comment}
+              </p>
             )}
           </div>
         );
-      case 'time_entry':
+      case "time_entry":
         return (
           <div>
             <p className="text-sm text-gray-600">
-              Списал <span className="font-semibold text-emerald-700">{activity.hours} ч</span> за{' '}
-              <span className="font-medium">{formatWorkDate(activity.workDate || '')}</span>
+              Списал{" "}
+              <span className="font-semibold text-emerald-700">
+                {activity.hours} ч
+              </span>{" "}
+              за{" "}
+              <span className="font-medium">
+                {formatWorkDate(activity.workDate || "")}
+              </span>
             </p>
             {activity.comment && (
               <p className="text-sm text-gray-500 mt-1">{activity.comment}</p>
             )}
             {activity.attachments.length > 0 && (
               <div className="mt-2 space-y-1">
-                {activity.attachments.map(att => (
+                {activity.attachments.map((att) => (
                   <a
                     key={att.id}
                     href={att.filePath}
@@ -194,7 +262,7 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
             )}
           </div>
         );
-      case 'created':
+      case "created":
         return <p className="text-sm text-gray-600">Создал задачу</p>;
       default:
         return <p className="text-sm text-gray-600">{activity.type}</p>;
@@ -220,7 +288,7 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
             onClick={handleAddComment}
             disabled={!commentText.trim() || submitting}
           >
-            {submitting ? 'Отправка...' : 'Отправить'}
+            {submitting ? "Отправка..." : "Отправить"}
           </Button>
         </div>
       </div>
@@ -231,18 +299,26 @@ const TaskActivityTimeline: React.FC<TaskActivityTimelineProps> = ({ taskId, ref
           <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : activities.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4">Нет записей в истории</p>
+        <p className="text-sm text-gray-400 text-center py-4">
+          Нет записей в истории
+        </p>
       ) : (
         <div className="space-y-4">
           {activities.map((activity) => (
             <div key={activity.id} className="flex gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getActivityColor(activity.type)}`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getActivityColor(activity.type)}`}
+              >
                 <i className={`${getActivityIcon(activity.type)} text-sm`}></i>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-sm font-medium text-gray-900">{activity.user.name}</span>
-                  <span className="text-xs text-gray-400">{formatDate(activity.createdAt)}</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {activity.user.name}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {formatDate(activity.createdAt)}
+                  </span>
                 </div>
                 {renderActivityContent(activity)}
               </div>

@@ -1,21 +1,25 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/base/Button';
-import Input from '@/components/base/Input';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import Button from "@/components/base/Button";
+import Input from "@/components/base/Input";
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'DEV',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "DEV",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [roleInputMode, setRoleInputMode] = useState<"select" | "text">(
+    "select",
+  );
+  const [customRole, setCustomRole] = useState("");
   const { register } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,30 +27,37 @@ const Register: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Пароли не совпадают');
+      setError("Пароли не совпадают");
       setIsLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Пароль должен быть не менее 6 символов');
+      setError("Пароль должен быть не менее 6 символов");
       setIsLoading(false);
       return;
     }
 
     try {
-      await register(formData.name, formData.email, formData.password, formData.role);
+      await register(
+        formData.name,
+        formData.email,
+        formData.password,
+        formData.role,
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка при регистрации');
+      setError(
+        err instanceof Error ? err.message : "Произошла ошибка при регистрации",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +77,12 @@ const Register: React.FC = () => {
             <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-glow transform hover:scale-105 transition-transform duration-300">
               <i className="ri-user-add-line text-white text-4xl"></i>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">Регистрация</h1>
-            <p className="text-ink-muted mt-3 text-lg">Создайте аккаунт в TaskFlow</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">
+              Регистрация
+            </h1>
+            <p className="text-ink-muted mt-3 text-lg">
+              Создайте аккаунт в QuantumTask
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -112,16 +127,67 @@ const Register: React.FC = () => {
             />
 
             <div>
-              <label className="block text-sm font-medium text-ink mb-2">Роль</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-3 bg-white/80 border border-surface-200 rounded-xl text-ink focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-              >
-                <option value="DEV">Разработчик</option>
-                <option value="PM">PM</option>
-              </select>
+              <label className="block text-sm font-medium text-ink mb-2">
+                Роль
+              </label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRoleInputMode("select");
+                    setFormData({ ...formData, role: "DEV" });
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${
+                    roleInputMode === "select"
+                      ? "bg-primary-50 border-primary-500 text-primary-700"
+                      : "border-surface-200 text-ink-muted hover:border-surface-300"
+                  }`}
+                >
+                  Выбрать
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRoleInputMode("text");
+                    setCustomRole("");
+                  }}
+                  className={`flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors ${
+                    roleInputMode === "text"
+                      ? "bg-primary-50 border-primary-500 text-primary-700"
+                      : "border-surface-200 text-ink-muted hover:border-surface-300"
+                  }`}
+                >
+                  Написать
+                </button>
+              </div>
+
+              {roleInputMode === "select" ? (
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-white/80 border border-surface-200 rounded-xl text-ink focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                >
+                  <option value="DEV">Разработчик</option>
+                  <option value="PM">Менеджер проекта (PM)</option>
+                  <option value="QA">QA инженер</option>
+                  <option value="Designer">Дизайнер</option>
+                  <option value="Analyst">Аналитик</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={customRole}
+                  onChange={(e) => {
+                    setCustomRole(e.target.value);
+                    setFormData({ ...formData, role: e.target.value });
+                  }}
+                  placeholder="Введите название роли"
+                  className="w-full px-4 py-3 bg-white/80 border border-surface-200 rounded-xl text-ink focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                />
+              )}
             </div>
 
             {error && (
@@ -144,15 +210,18 @@ const Register: React.FC = () => {
                   Регистрация...
                 </div>
               ) : (
-                'Зарегистрироваться'
+                "Зарегистрироваться"
               )}
             </Button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-surface-200 text-center">
             <p className="text-sm text-ink-light">
-              Уже есть аккаунт?{' '}
-              <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+              Уже есть аккаунт?{" "}
+              <Link
+                href="/login"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
                 Войдите
               </Link>
             </p>

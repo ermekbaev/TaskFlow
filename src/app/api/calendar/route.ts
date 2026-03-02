@@ -1,28 +1,85 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getSession } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function GET() {
   try {
     const session = await getSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get personal calendar events
     const events = await prisma.calendarEvent.findMany({
       where: { userId: session.userId },
-      orderBy: { startDate: 'asc' },
+      orderBy: { startDate: "asc" },
       include: {
         attachments: {
-          select: { id: true, fileName: true, filePath: true, fileSize: true, mimeType: true, category: true, createdAt: true }
-        }
-      }
+          select: {
+            id: true,
+            fileName: true,
+            filePath: true,
+            fileSize: true,
+            mimeType: true,
+            category: true,
+            createdAt: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json({ events });
+    // Get task call events where user is assigned (either primary or additional)
+    const taskWithCallEvents = await prisma.task.findMany({
+      where: {
+        isCallEvent: true,
+        OR: [
+          { assigneeId: session.userId },
+          { assignees: { some: { userId: session.userId } } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        callStartTime: true,
+        callEndTime: true,
+        startDate: true,
+        dueDate: true,
+        key: true,
+        project: { select: { name: true } },
+      },
+    });
+
+    // Convert task call events to calendar format
+    const taskCallEventsFarmated = taskWithCallEvents.map((task) => ({
+      id: `task-${task.id}`,
+      title: `[Встреча] ${task.title} (${task.key})`,
+      description: `Встреча для задачи ${task.key} - ${task.project.name}`,
+      startDate:
+        task.startDate ||
+        task.dueDate ||
+        new Date().toISOString().split("T")[0],
+      endDate:
+        task.startDate ||
+        task.dueDate ||
+        new Date().toISOString().split("T")[0],
+      startTime: task.callStartTime || "09:00",
+      endTime: task.callEndTime || "10:00",
+      color: "bg-purple-100 text-purple-700",
+      type: "meeting" as const,
+      completed: false,
+      userId: session.userId,
+      reminderTime: null,
+      reminderSent: false,
+      attachments: [],
+    }));
+
+    // Combine personal events and task call events
+    const allEvents = [...events, ...taskCallEventsFarmated];
+
+    return NextResponse.json({ events: allEvents });
   } catch (error) {
-    console.error('Get calendar events error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error("Get calendar events error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -30,34 +87,47 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, startDate, endDate, startTime, endTime, color, type, reminderTime } = await req.json();
+    const {
+      title,
+      description,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      color,
+      type,
+      reminderTime,
+    } = await req.json();
 
     if (!title || !startDate || !endDate) {
-      return NextResponse.json({ error: 'title, startDate, endDate обязательны' }, { status: 400 });
+      return NextResponse.json(
+        { error: "title, startDate, endDate обязательны" },
+        { status: 400 },
+      );
     }
 
     const event = await prisma.calendarEvent.create({
       data: {
         userId: session.userId,
         title,
-        description: description || '',
+        description: description || "",
         startDate,
         endDate,
-        startTime: startTime || '09:00',
-        endTime: endTime || '10:00',
-        color: color || 'bg-sky-100 text-sky-700',
-        type: type || 'personal',
+        startTime: startTime || "09:00",
+        endTime: endTime || "10:00",
+        color: color || "bg-sky-100 text-sky-700",
+        type: type || "personal",
         reminderTime: reminderTime || null,
       },
     });
 
     return NextResponse.json({ event });
   } catch (error) {
-    console.error('Create calendar event error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error("Create calendar event error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -65,18 +135,31 @@ export async function PUT(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, title, description, startDate, endDate, startTime, endTime, color, type, completed, reminderTime, reminderSent } = await req.json();
+    const {
+      id,
+      title,
+      description,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      color,
+      type,
+      completed,
+      reminderTime,
+      reminderSent,
+    } = await req.json();
 
     if (!id) {
-      return NextResponse.json({ error: 'id обязателен' }, { status: 400 });
+      return NextResponse.json({ error: "id обязателен" }, { status: 400 });
     }
 
     const existing = await prisma.calendarEvent.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.userId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     const event = await prisma.calendarEvent.update({
@@ -98,8 +181,8 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ event });
   } catch (error) {
-    console.error('Update calendar event error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error("Update calendar event error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -107,24 +190,24 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await req.json();
     if (!id) {
-      return NextResponse.json({ error: 'id обязателен' }, { status: 400 });
+      return NextResponse.json({ error: "id обязателен" }, { status: 400 });
     }
 
     const existing = await prisma.calendarEvent.findUnique({ where: { id } });
     if (!existing || existing.userId !== session.userId) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     await prisma.calendarEvent.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete calendar event error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error("Delete calendar event error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -1,50 +1,56 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import Button from '@/components/base/Button';
+import React from "react";
+import { useRouter } from "next/navigation";
+import Button from "@/components/base/Button";
 
 export default function Landing() {
   const router = useRouter();
 
   const features = [
     {
-      icon: 'ri-dashboard-3-line',
-      title: 'Kanban-доски',
-      description: 'Визуализируйте рабочий процесс с помощью интуитивных досок задач с drag & drop'
+      icon: "ri-dashboard-3-line",
+      title: "Kanban-доски",
+      description:
+        "Визуализируйте рабочий процесс с помощью интуитивных досок задач с drag & drop",
     },
     {
-      icon: 'ri-team-line',
-      title: 'Командная работа',
-      description: 'Назначайте задачи, отслеживайте прогресс и координируйте работу команды'
+      icon: "ri-team-line",
+      title: "Командная работа",
+      description:
+        "Назначайте задачи, отслеживайте прогресс и координируйте работу команды",
     },
     {
-      icon: 'ri-bar-chart-box-line',
-      title: 'Аналитика',
-      description: 'Получайте insights о производительности проектов и эффективности команды'
+      icon: "ri-bar-chart-box-line",
+      title: "Аналитика",
+      description:
+        "Получайте insights о производительности проектов и эффективности команды",
     },
     {
-      icon: 'ri-shield-check-line',
-      title: 'Ролевой доступ',
-      description: 'Гибкая система прав: администраторы, менеджеры и разработчики'
+      icon: "ri-shield-check-line",
+      title: "Ролевой доступ",
+      description:
+        "Гибкая система прав: администраторы, менеджеры и разработчики",
     },
     {
-      icon: 'ri-calendar-check-line',
-      title: 'Дедлайны',
-      description: 'Контролируйте сроки выполнения задач и никогда не пропускайте дедлайны'
+      icon: "ri-calendar-check-line",
+      title: "Дедлайны",
+      description:
+        "Контролируйте сроки выполнения задач и никогда не пропускайте дедлайны",
     },
     {
-      icon: 'ri-git-branch-line',
-      title: 'Git интеграция',
-      description: 'Связывайте задачи с коммитами и отслеживайте изменения кода'
-    }
+      icon: "ri-git-branch-line",
+      title: "Git интеграция",
+      description:
+        "Связывайте задачи с коммитами и отслеживайте изменения кода",
+    },
   ];
 
   const stats = [
-    { value: '10K+', label: 'Активных пользователей' },
-    { value: '50K+', label: 'Созданных проектов' },
-    { value: '500K+', label: 'Выполненных задач' },
-    { value: '99.9%', label: 'Uptime' }
+    { value: "10K+", label: "Активных пользователей" },
+    { value: "50K+", label: "Созданных проектов" },
+    { value: "500K+", label: "Выполненных задач" },
+    { value: "99.9%", label: "Uptime" },
   ];
 
   return (
@@ -54,20 +60,24 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div
               className="flex items-center space-x-3 cursor-pointer"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push("/dashboard")}
             >
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-soft">
                 <i className="ri-dashboard-line text-white text-xl"></i>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-ink to-primary-600 bg-clip-text text-transparent">
-                TaskFlow
+                QuantumTask
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" onClick={() => router.push('/login')}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/login")}
+              >
                 Войти
               </Button>
-              <Button size="sm" onClick={() => router.push('/login')}>
+              <Button size="sm" onClick={() => router.push("/login")}>
                 Начать бесплатно
               </Button>
             </div>
@@ -93,12 +103,16 @@ export default function Landing() {
             </h1>
 
             <p className="text-xl text-ink-muted mb-10 max-w-2xl mx-auto leading-relaxed">
-              TaskFlow — современная система управления IT-проектами.
+              QuantumTask — современная система управления IT-проектами.
               Kanban-доски, отслеживание задач и командная работа в одном месте.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" onClick={() => router.push('/login')} className="px-8">
+              <Button
+                size="lg"
+                onClick={() => router.push("/login")}
+                className="px-8"
+              >
                 <i className="ri-arrow-right-line mr-2"></i>
                 Попробовать бесплатно
               </Button>
@@ -113,22 +127,32 @@ export default function Landing() {
             <div className="bg-white rounded-2xl shadow-elevated border border-surface-200 p-2 max-w-5xl mx-auto">
               <div className="bg-gradient-to-br from-surface-50 to-surface-100 rounded-xl p-8">
                 <div className="grid grid-cols-4 gap-4">
-                  {['Backlog', 'To Do', 'In Progress', 'Done'].map((column, idx) => (
-                    <div key={column} className="bg-white rounded-xl p-4 shadow-soft">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-semibold text-ink">{column}</span>
-                        <span className="text-xs text-ink-light bg-surface-100 px-2 py-1 rounded-full">
-                          {[3, 5, 4, 8][idx]}
-                        </span>
-                      </div>
-                      {[...Array([2, 3, 2, 3][idx])].map((_, i) => (
-                        <div key={i} className="bg-surface-50 rounded-lg p-3 mb-2 last:mb-0">
-                          <div className="h-2 bg-surface-200 rounded w-3/4 mb-2"></div>
-                          <div className="h-2 bg-surface-100 rounded w-1/2"></div>
+                  {["Backlog", "To Do", "In Progress", "Done"].map(
+                    (column, idx) => (
+                      <div
+                        key={column}
+                        className="bg-white rounded-xl p-4 shadow-soft"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm font-semibold text-ink">
+                            {column}
+                          </span>
+                          <span className="text-xs text-ink-light bg-surface-100 px-2 py-1 rounded-full">
+                            {[3, 5, 4, 8][idx]}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  ))}
+                        {[...Array([2, 3, 2, 3][idx])].map((_, i) => (
+                          <div
+                            key={i}
+                            className="bg-surface-50 rounded-lg p-3 mb-2 last:mb-0"
+                          >
+                            <div className="h-2 bg-surface-200 rounded w-3/4 mb-2"></div>
+                            <div className="h-2 bg-surface-100 rounded w-1/2"></div>
+                          </div>
+                        ))}
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             </div>
@@ -139,7 +163,9 @@ export default function Landing() {
                   <i className="ri-check-line text-emerald-600"></i>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-ink">Задача выполнена</p>
+                  <p className="text-sm font-medium text-ink">
+                    Задача выполнена
+                  </p>
                   <p className="text-xs text-ink-light">2 минуты назад</p>
                 </div>
               </div>
@@ -152,7 +178,9 @@ export default function Landing() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-ink">Новый участник</p>
-                  <p className="text-xs text-ink-light">Присоединился к проекту</p>
+                  <p className="text-xs text-ink-light">
+                    Присоединился к проекту
+                  </p>
                 </div>
               </div>
             </div>
@@ -165,7 +193,9 @@ export default function Landing() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, idx) => (
               <div key={idx} className="text-center">
-                <p className="text-4xl md:text-5xl font-bold text-white mb-2">{stat.value}</p>
+                <p className="text-4xl md:text-5xl font-bold text-white mb-2">
+                  {stat.value}
+                </p>
                 <p className="text-primary-200">{stat.label}</p>
               </div>
             ))}
@@ -176,7 +206,9 @@ export default function Landing() {
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-ink mb-4">Всё для эффективной работы</h2>
+            <h2 className="text-4xl font-bold text-ink mb-4">
+              Всё для эффективной работы
+            </h2>
             <p className="text-xl text-ink-muted max-w-2xl mx-auto">
               Полный набор инструментов для управления проектами любой сложности
             </p>
@@ -189,10 +221,16 @@ export default function Landing() {
                 className="bg-white rounded-2xl p-8 shadow-soft border border-surface-200 hover:shadow-medium hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="w-14 h-14 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center mb-6">
-                  <i className={`${feature.icon} text-primary-600 text-2xl`}></i>
+                  <i
+                    className={`${feature.icon} text-primary-600 text-2xl`}
+                  ></i>
                 </div>
-                <h3 className="text-xl font-semibold text-ink mb-3">{feature.title}</h3>
-                <p className="text-ink-muted leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-semibold text-ink mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-ink-muted leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
@@ -202,20 +240,40 @@ export default function Landing() {
       <section className="py-24 px-6 bg-surface-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-ink mb-4">Как это работает</h2>
-            <p className="text-xl text-ink-muted">Три простых шага к продуктивности</p>
+            <h2 className="text-4xl font-bold text-ink mb-4">
+              Как это работает
+            </h2>
+            <p className="text-xl text-ink-muted">
+              Три простых шага к продуктивности
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Создайте проект', desc: 'Добавьте новый проект и пригласите участников команды' },
-              { step: '02', title: 'Добавьте задачи', desc: 'Создавайте задачи, назначайте исполнителей и устанавливайте сроки' },
-              { step: '03', title: 'Отслеживайте прогресс', desc: 'Используйте Kanban-доску для визуализации и управления работой' }
+              {
+                step: "01",
+                title: "Создайте проект",
+                desc: "Добавьте новый проект и пригласите участников команды",
+              },
+              {
+                step: "02",
+                title: "Добавьте задачи",
+                desc: "Создавайте задачи, назначайте исполнителей и устанавливайте сроки",
+              },
+              {
+                step: "03",
+                title: "Отслеживайте прогресс",
+                desc: "Используйте Kanban-доску для визуализации и управления работой",
+              },
             ].map((item, idx) => (
               <div key={idx} className="relative">
                 <div className="bg-white rounded-2xl p-8 shadow-soft border border-surface-200 text-center">
-                  <div className="text-6xl font-bold text-primary-100 mb-4">{item.step}</div>
-                  <h3 className="text-xl font-semibold text-ink mb-3">{item.title}</h3>
+                  <div className="text-6xl font-bold text-primary-100 mb-4">
+                    {item.step}
+                  </div>
+                  <h3 className="text-xl font-semibold text-ink mb-3">
+                    {item.title}
+                  </h3>
                   <p className="text-ink-muted">{item.desc}</p>
                 </div>
                 {idx < 2 && (
@@ -238,14 +296,17 @@ export default function Landing() {
             </div>
 
             <div className="relative">
-              <h2 className="text-4xl font-bold text-white mb-4">Готовы начать?</h2>
+              <h2 className="text-4xl font-bold text-white mb-4">
+                Готовы начать?
+              </h2>
               <p className="text-xl text-primary-100 mb-8 max-w-xl mx-auto">
-                Присоединяйтесь к тысячам команд, которые уже используют TaskFlow
+                Присоединяйтесь к тысячам команд, которые уже используют
+                QuantumTask
               </p>
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => router.push('/login')}
+                onClick={() => router.push("/login")}
                 className="bg-white text-primary-600 hover:bg-primary-50 px-8"
               >
                 Начать бесплатно
@@ -263,19 +324,27 @@ export default function Landing() {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center">
                 <i className="ri-dashboard-line text-white text-xl"></i>
               </div>
-              <span className="text-xl font-bold text-white">TaskFlow</span>
+              <span className="text-xl font-bold text-white">QuantumTask</span>
             </div>
 
             <div className="flex items-center space-x-8 text-surface-300">
-              <a href="#" className="hover:text-white transition-colors">О нас</a>
-              <a href="#" className="hover:text-white transition-colors">Возможности</a>
-              <a href="#" className="hover:text-white transition-colors">Цены</a>
-              <a href="#" className="hover:text-white transition-colors">Контакты</a>
+              <a href="#" className="hover:text-white transition-colors">
+                О нас
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Возможности
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Цены
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                Контакты
+              </a>
             </div>
           </div>
 
           <div className="mt-8 pt-8 border-t border-white/10 text-center text-surface-400">
-            <p>&copy; 2024 TaskFlow. Все права защищены.</p>
+            <p>&copy; 2024 QuantumTask. Все права защищены.</p>
           </div>
         </div>
       </footer>

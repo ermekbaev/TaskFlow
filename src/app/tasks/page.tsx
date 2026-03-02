@@ -686,7 +686,7 @@ const TaskList: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t border-surface-200">
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={() =>
                   router.push(`/project/${selectedTask.projectId}/board`)
@@ -694,7 +694,7 @@ const TaskList: React.FC = () => {
               >
                 <i className="ri-kanban-view mr-2"></i>
                 Открыть доску
-              </Button>
+              </Button> */}
               <div className="flex space-x-3">
                 <Button
                   variant="outline"
