@@ -1,53 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from '@/components/base/Modal';
 import Button from '@/components/base/Button';
 import Input from '@/components/base/Input';
 import UserPicker from '@/components/base/UserPicker';
 import MultiUserPicker from '@/components/base/MultiUserPicker';
+import TaskTypeSelector from './TaskTypeSelector';
+import RecurringFields from './RecurringFields';
+import ParentTaskFields from './ParentTaskFields';
+import {
+  PRIORITIES,
+  INITIAL_FORM,
+  INITIAL_PARENT_FIELDS,
+  TaskFormState,
+  ParentFieldsState,
+  CustomDate,
+} from './task-constants';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSubmit: (task: any) => void;
   projectId: string;
   projectKey: string;
   columns: Array<{ id: string; name: string; order: number }>;
   existingTasks?: Array<{ id: string; key: string; title: string; taskType: string }>;
 }
-
-const TASK_TYPES = [
-  { value: 'task', label: 'Обычная задача', icon: 'ri-task-line' },
-  { value: 'recurring', label: 'Регулярная', icon: 'ri-repeat-line' },
-  { value: 'parent', label: 'Заглавная задача', icon: 'ri-folder-open-line' },
-  { value: 'stage', label: 'Этап', icon: 'ri-git-branch-line' },
-];
-
-const RECURRENCE_OPTIONS = [
-  { value: 'daily', label: 'Ежедневно' },
-  { value: 'weekly', label: 'Еженедельно' },
-  { value: 'biweekly', label: 'Раз в 2 недели' },
-  { value: 'monthly', label: 'Ежемесячно' },
-];
-
-const WEEKDAYS = [
-  { value: 'mon', label: 'Пн' },
-  { value: 'tue', label: 'Вт' },
-  { value: 'wed', label: 'Ср' },
-  { value: 'thu', label: 'Чт' },
-  { value: 'fri', label: 'Пт' },
-  { value: 'sat', label: 'Сб' },
-  { value: 'sun', label: 'Вс' },
-];
-
-const ACCEPTANCE_STATUSES = [
-  { value: '', label: 'Не указан' },
-  { value: 'pending', label: 'Ожидает' },
-  { value: 'in_review', label: 'На рассмотрении' },
-  { value: 'accepted', label: 'Принято' },
-  { value: 'rejected', label: 'Отклонено' },
-];
 
 const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   isOpen,
@@ -59,50 +39,47 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   existingTasks = [],
 }) => {
   const [taskType, setTaskType] = useState('task');
-  const [task, setTask] = useState({
-    title: '',
-    description: '',
-    status: 'To Do',
-    priority: 'P3',
-    assigneeId: '',
-    labels: '',
-    dueDate: '',
-    startDate: '',
-    assignmentDate: '',
-    expectedHours: '',
-    actualHours: '',
-    parentId: '',
-  });
-
-  // Multiple assignees
+  const [task, setTask] = useState<TaskFormState>({ ...INITIAL_FORM });
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-
-  // Recurring fields
   const [recurrencePattern, setRecurrencePattern] = useState('weekly');
   const [recurrenceDays, setRecurrenceDays] = useState<string[]>([]);
   const [isCallEvent, setIsCallEvent] = useState(false);
   const [callStartTime, setCallStartTime] = useState('09:00');
   const [callEndTime, setCallEndTime] = useState('10:00');
+  const [parentFields, setParentFields] = useState<ParentFieldsState>({ ...INITIAL_PARENT_FIELDS });
+  const [customDates, setCustomDates] = useState<CustomDate[]>([]);
 
-  // Parent task fields
-  const [parentFields, setParentFields] = useState({
-    initiatorName: '',
-    initiatorEmail: '',
-    initiatorPosition: '',
-    curatorName: '',
-    curatorEmail: '',
-    curatorPosition: '',
-    acceptanceStatus: '',
-  });
-  const [customDates, setCustomDates] = useState<Array<{ name: string; date: string }>>([]);
-
-  // Fetch parent tasks for stage/task type
   const parentTasks = existingTasks.filter(t => t.taskType === 'parent');
   const parentAndStageTasks = existingTasks.filter(t => t.taskType === 'parent' || t.taskType === 'stage');
+
+  const updateTask = (patch: Partial<TaskFormState>) => setTask(prev => ({ ...prev, ...patch }));
+
+  const toggleDay = (day: string) => {
+    setRecurrenceDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  };
+
+  const resetForm = () => {
+    setTaskType('task');
+    setTask({ ...INITIAL_FORM });
+    setAssigneeIds([]);
+    setRecurrencePattern('weekly');
+    setRecurrenceDays([]);
+    setIsCallEvent(false);
+    setCallStartTime('09:00');
+    setCallEndTime('10:00');
+    setParentFields({ ...INITIAL_PARENT_FIELDS });
+    setCustomDates([]);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleSubmit = () => {
     if (!task.title) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const taskData: any = {
       ...task,
       taskType,
@@ -133,93 +110,26 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     onClose();
   };
 
-  const resetForm = () => {
-    setTaskType('task');
-    setTask({
-      title: '', description: '', status: 'To Do', priority: 'P3',
-      assigneeId: '', labels: '', dueDate: '', startDate: '',
-      assignmentDate: '', expectedHours: '', actualHours: '', parentId: '',
-    });
-    setAssigneeIds([]);
-    setRecurrencePattern('weekly');
-    setRecurrenceDays([]);
-    setIsCallEvent(false);
-    setCallStartTime('09:00');
-    setCallEndTime('10:00');
-    setParentFields({
-      initiatorName: '', initiatorEmail: '', initiatorPosition: '',
-      curatorName: '', curatorEmail: '', curatorPosition: '',
-      acceptanceStatus: '',
-    });
-    setCustomDates([]);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
-  const addCustomDate = () => {
-    setCustomDates([...customDates, { name: '', date: '' }]);
-  };
-
-  const removeCustomDate = (index: number) => {
-    setCustomDates(customDates.filter((_, i) => i !== index));
-  };
-
-  const toggleDay = (day: string) => {
-    setRecurrenceDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
-  };
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Создать новую задачу"
-      size="xl"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Создать новую задачу" size="xl">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
-        {/* Task Type Selector */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Тип задачи</label>
-          <div className="grid grid-cols-4 gap-2">
-            {TASK_TYPES.map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => setTaskType(type.value)}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                  taskType === type.value
-                    ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-300'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <i className={type.icon}></i>
-                {type.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TaskTypeSelector value={taskType} onChange={setTaskType} />
 
-        {/* Title */}
         <Input
           label="Название задачи"
           value={task.title}
-          onChange={(e) => setTask({ ...task, title: e.target.value })}
+          onChange={(e) => updateTask({ title: e.target.value })}
           placeholder="Введите название задачи"
           required
         />
 
-        {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {taskType === 'parent' ? 'Описание функционала' : 'Описание'}
           </label>
           <textarea
             value={task.description}
-            onChange={(e) => setTask({ ...task, description: e.target.value })}
+            onChange={(e) => updateTask({ description: e.target.value })}
             placeholder={taskType === 'parent' ? 'Опишите функционал...' : 'Описание задачи (поддерживается Markdown)'}
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -232,7 +142,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">Статус</label>
             <select
               value={task.status}
-              onChange={(e) => setTask({ ...task, status: e.target.value })}
+              onChange={(e) => updateTask({ status: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {columns.map((column) => (
@@ -244,18 +154,17 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">Приоритет</label>
             <select
               value={task.priority}
-              onChange={(e) => setTask({ ...task, priority: e.target.value })}
+              onChange={(e) => updateTask({ priority: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="P1">P1 - Критический</option>
-              <option value="P2">P2 - Высокий</option>
-              <option value="P3">P3 - Средний</option>
-              <option value="P4">P4 - Низкий</option>
+              {PRIORITIES.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
             </select>
           </div>
         </div>
 
-        {/* Parent task selector (for stages and regular tasks - only when parent/stage tasks exist) */}
+        {/* Parent task selector */}
         {(taskType === 'stage' || taskType === 'task') && parentAndStageTasks.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -263,20 +172,18 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </label>
             <select
               value={task.parentId}
-              onChange={(e) => setTask({ ...task, parentId: e.target.value })}
+              onChange={(e) => updateTask({ parentId: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Без привязки</option>
               {(taskType === 'stage' ? parentTasks : parentAndStageTasks).map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.key} - {t.title}
-                </option>
+                <option key={t.id} value={t.id}>{t.key} - {t.title}</option>
               ))}
             </select>
           </div>
         )}
 
-        {/* Parent task selector for recurring tasks - always shown, all tasks as options */}
+        {/* Parent task selector for recurring tasks */}
         {taskType === 'recurring' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -284,14 +191,12 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             </label>
             <select
               value={task.parentId}
-              onChange={(e) => setTask({ ...task, parentId: e.target.value })}
+              onChange={(e) => updateTask({ parentId: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Без привязки</option>
               {existingTasks.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.key} - {t.title}
-                </option>
+                <option key={t.id} value={t.id}>{t.key} - {t.title}</option>
               ))}
             </select>
           </div>
@@ -301,11 +206,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         <UserPicker
           label="Основной исполнитель"
           value={task.assigneeId}
-          onChange={(userId) => setTask({ ...task, assigneeId: userId })}
+          onChange={(userId) => updateTask({ assigneeId: userId })}
           placeholder="Поиск пользователя по имени или email..."
           projectId={projectId}
         />
-
         <MultiUserPicker
           label="Дополнительные исполнители"
           value={assigneeIds}
@@ -315,273 +219,57 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           projectId={projectId}
         />
 
-        {/* Dates - for non-recurring tasks */}
+        {/* Dates */}
         {taskType !== 'recurring' && (
           <div className="grid grid-cols-3 gap-4">
-            <Input
-              label="Дата назначения"
-              type="date"
-              value={task.assignmentDate}
-              onChange={(e) => setTask({ ...task, assignmentDate: e.target.value })}
-            />
-            <Input
-              label="Дата начала"
-              type="date"
-              value={task.startDate}
-              onChange={(e) => setTask({ ...task, startDate: e.target.value })}
-            />
-            <Input
-              label="Срок выполнения"
-              type="date"
-              value={task.dueDate}
-              onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
-            />
+            <Input label="Дата назначения" type="date" value={task.assignmentDate} onChange={(e) => updateTask({ assignmentDate: e.target.value })} />
+            <Input label="Дата начала" type="date" value={task.startDate} onChange={(e) => updateTask({ startDate: e.target.value })} />
+            <Input label="Срок выполнения" type="date" value={task.dueDate} onChange={(e) => updateTask({ dueDate: e.target.value })} />
           </div>
         )}
 
         {/* Labor costs */}
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Ожидаемые трудозатраты (ч)"
-            type="number"
-            value={task.expectedHours}
-            onChange={(e) => setTask({ ...task, expectedHours: e.target.value })}
-            placeholder="0"
-          />
-          <Input
-            label="Фактические трудозатраты (ч)"
-            type="number"
-            value={task.actualHours}
-            onChange={(e) => setTask({ ...task, actualHours: e.target.value })}
-            placeholder="0"
-          />
+          <Input label="Ожидаемые трудозатраты (ч)" type="number" value={task.expectedHours} onChange={(e) => updateTask({ expectedHours: e.target.value })} placeholder="0" />
+          <Input label="Фактические трудозатраты (ч)" type="number" value={task.actualHours} onChange={(e) => updateTask({ actualHours: e.target.value })} placeholder="0" />
         </div>
 
-        {/* Recurring task section */}
+        {/* Recurring settings */}
         {taskType === 'recurring' && (
-          <div className="border rounded-lg p-4 bg-blue-50/50 space-y-4">
-            <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <i className="ri-repeat-line"></i>
-              Настройки повторения
-            </h4>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Частота</label>
-              <select
-                value={recurrencePattern}
-                onChange={(e) => setRecurrencePattern(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                {RECURRENCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {(recurrencePattern === 'weekly' || recurrencePattern === 'biweekly') && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Дни недели</label>
-                <div className="flex gap-2">
-                  {WEEKDAYS.map(day => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleDay(day.value)}
-                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                        recurrenceDays.includes(day.value)
-                          ? 'bg-primary-500 text-white'
-                          : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Дата начала"
-                type="date"
-                value={task.startDate}
-                onChange={(e) => setTask({ ...task, startDate: e.target.value })}
-              />
-              <Input
-                label="Срок выполнения"
-                type="date"
-                value={task.dueDate}
-                onChange={(e) => setTask({ ...task, dueDate: e.target.value })}
-              />
-            </div>
-
-            {/* Call/Meeting option */}
-            <div className="border rounded-lg p-3 bg-white space-y-3">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="isCallEvent"
-                  checked={isCallEvent}
-                  onChange={(e) => setIsCallEvent(e.target.checked)}
-                  className="w-4 h-4 text-primary-600 rounded cursor-pointer"
-                />
-                <label htmlFor="isCallEvent" className="text-sm font-medium text-gray-700 flex items-center gap-2 cursor-pointer">
-                  <i className="ri-phone-line text-primary-600"></i>
-                  Созвон / Встреча
-                </label>
-              </div>
-              {isCallEvent && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Начало"
-                    type="time"
-                    value={callStartTime}
-                    onChange={(e) => setCallStartTime(e.target.value)}
-                  />
-                  <Input
-                    label="Конец"
-                    type="time"
-                    value={callEndTime}
-                    onChange={(e) => setCallEndTime(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
+          <RecurringFields
+            recurrencePattern={recurrencePattern}
+            onPatternChange={setRecurrencePattern}
+            recurrenceDays={recurrenceDays}
+            onToggleDay={toggleDay}
+            startDate={task.startDate}
+            onStartDateChange={(v) => updateTask({ startDate: v })}
+            dueDate={task.dueDate}
+            onDueDateChange={(v) => updateTask({ dueDate: v })}
+            showCallEvent
+            isCallEvent={isCallEvent}
+            onCallEventChange={setIsCallEvent}
+            callStartTime={callStartTime}
+            onCallStartTimeChange={setCallStartTime}
+            callEndTime={callEndTime}
+            onCallEndTimeChange={setCallEndTime}
+          />
         )}
 
-        {/* Parent task additional fields */}
+        {/* Parent task fields */}
         {taskType === 'parent' && (
-          <div className="space-y-4">
-            {/* Initiator */}
-            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <i className="ri-user-star-line"></i>
-                Инициатор
-              </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <Input
-                  label="ФИО"
-                  value={parentFields.initiatorName}
-                  onChange={(e) => setParentFields({ ...parentFields, initiatorName: e.target.value })}
-                  placeholder="ФИО инициатора"
-                />
-                <Input
-                  label="Почта"
-                  type="email"
-                  value={parentFields.initiatorEmail}
-                  onChange={(e) => setParentFields({ ...parentFields, initiatorEmail: e.target.value })}
-                  placeholder="email@example.com"
-                />
-                <Input
-                  label="Должность"
-                  value={parentFields.initiatorPosition}
-                  onChange={(e) => setParentFields({ ...parentFields, initiatorPosition: e.target.value })}
-                  placeholder="Должность"
-                />
-              </div>
-            </div>
-
-            {/* Curator */}
-            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <i className="ri-shield-user-line"></i>
-                Куратор
-              </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <Input
-                  label="ФИО"
-                  value={parentFields.curatorName}
-                  onChange={(e) => setParentFields({ ...parentFields, curatorName: e.target.value })}
-                  placeholder="ФИО куратора"
-                />
-                <Input
-                  label="Почта"
-                  type="email"
-                  value={parentFields.curatorEmail}
-                  onChange={(e) => setParentFields({ ...parentFields, curatorEmail: e.target.value })}
-                  placeholder="email@example.com"
-                />
-                <Input
-                  label="Должность"
-                  value={parentFields.curatorPosition}
-                  onChange={(e) => setParentFields({ ...parentFields, curatorPosition: e.target.value })}
-                  placeholder="Должность"
-                />
-              </div>
-            </div>
-
-            {/* Acceptance Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Статус приёмки</label>
-              <select
-                value={parentFields.acceptanceStatus}
-                onChange={(e) => setParentFields({ ...parentFields, acceptanceStatus: e.target.value })}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {ACCEPTANCE_STATUSES.map(s => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Custom Dates */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Пользовательские даты</label>
-                <button
-                  type="button"
-                  onClick={addCustomDate}
-                  className="text-sm text-primary-600 hover:text-primary-700 cursor-pointer flex items-center gap-1"
-                >
-                  <i className="ri-add-line"></i>
-                  Добавить дату
-                </button>
-              </div>
-              {customDates.map((cd, index) => (
-                <div key={index} className="flex items-end gap-2 mb-2">
-                  <div className="flex-1">
-                    <Input
-                      label={index === 0 ? 'Название' : undefined}
-                      value={cd.name}
-                      onChange={(e) => {
-                        const updated = [...customDates];
-                        updated[index].name = e.target.value;
-                        setCustomDates(updated);
-                      }}
-                      placeholder="Например: Дата согласования"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Input
-                      label={index === 0 ? 'Дата' : undefined}
-                      type="date"
-                      value={cd.date}
-                      onChange={(e) => {
-                        const updated = [...customDates];
-                        updated[index].date = e.target.value;
-                        setCustomDates(updated);
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeCustomDate(index)}
-                    className="text-red-400 hover:text-red-600 cursor-pointer p-2 mb-0.5"
-                  >
-                    <i className="ri-close-line"></i>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ParentTaskFields
+            parentFields={parentFields}
+            onFieldChange={(field, value) => setParentFields(prev => ({ ...prev, [field]: value }))}
+            customDates={customDates}
+            onCustomDatesChange={setCustomDates}
+          />
         )}
 
         {/* Labels */}
         <Input
           label="Метки"
           value={task.labels}
-          onChange={(e) => setTask({ ...task, labels: e.target.value })}
+          onChange={(e) => updateTask({ labels: e.target.value })}
           placeholder="frontend, api, bug (через запятую)"
         />
 
@@ -590,11 +278,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           <Button variant="outline" onClick={handleClose} className="flex-1">
             Отмена
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!task.title}
-            className="flex-1"
-          >
+          <Button onClick={handleSubmit} disabled={!task.title} className="flex-1">
             Создать задачу
           </Button>
         </div>

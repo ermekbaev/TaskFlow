@@ -6,6 +6,18 @@ import Button from '@/components/base/Button';
 import Input from '@/components/base/Input';
 import UserPicker from '@/components/base/UserPicker';
 import MultiUserPicker from '@/components/base/MultiUserPicker';
+import TaskTypeSelector from './TaskTypeSelector';
+import RecurringFields from './RecurringFields';
+import ParentTaskFields from './ParentTaskFields';
+import {
+  BOARD_COLUMNS,
+  PRIORITIES,
+  INITIAL_FORM,
+  INITIAL_PARENT_FIELDS,
+  TaskFormState,
+  ParentFieldsState,
+  CustomDate,
+} from './task-constants';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface EditTaskModalProps {
@@ -20,45 +32,34 @@ interface EditTaskModalProps {
   isManager: boolean;
 }
 
-const BOARD_COLUMNS = [
-  { id: '1', name: 'Backlog' },
-  { id: '2', name: 'To Do' },
-  { id: '3', name: 'In Progress' },
-  { id: '4', name: 'Review' },
-  { id: '5', name: 'Done' },
-];
+function getChangedFields(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  original: Record<string, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updated: Record<string, any>,
+  fields: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const changes: Record<string, any> = {};
+  for (const key of fields) {
+    const orig = original[key] ?? '';
+    const next = updated[key] ?? '';
+    if (orig !== next) {
+      changes[key] = next || null;
+    }
+  }
+  return changes;
+}
 
-const TASK_TYPES = [
-  { value: 'task', label: 'Обычная задача', icon: 'ri-task-line' },
-  { value: 'recurring', label: 'Регулярная', icon: 'ri-repeat-line' },
-  { value: 'parent', label: 'Заглавная задача', icon: 'ri-folder-open-line' },
-  { value: 'stage', label: 'Этап', icon: 'ri-git-branch-line' },
-];
-
-const RECURRENCE_OPTIONS = [
-  { value: 'daily', label: 'Ежедневно' },
-  { value: 'weekly', label: 'Еженедельно' },
-  { value: 'biweekly', label: 'Раз в 2 недели' },
-  { value: 'monthly', label: 'Ежемесячно' },
-];
-
-const WEEKDAYS = [
-  { value: 'mon', label: 'Пн' },
-  { value: 'tue', label: 'Вт' },
-  { value: 'wed', label: 'Ср' },
-  { value: 'thu', label: 'Чт' },
-  { value: 'fri', label: 'Пт' },
-  { value: 'sat', label: 'Сб' },
-  { value: 'sun', label: 'Вс' },
-];
-
-const ACCEPTANCE_STATUSES = [
-  { value: '', label: 'Не указан' },
-  { value: 'pending', label: 'Ожидает' },
-  { value: 'in_review', label: 'На рассмотрении' },
-  { value: 'accepted', label: 'Принято' },
-  { value: 'rejected', label: 'Отклонено' },
-];
+function parseJsonField<T>(value: unknown, fallback: T): T {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    return Array.isArray(parsed) ? (parsed as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const EditTaskModal: React.FC<EditTaskModalProps> = ({
   isOpen,
@@ -70,45 +71,19 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
   isManager,
 }) => {
   const [taskType, setTaskType] = useState('task');
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    status: 'To Do',
-    priority: 'P3',
-    assigneeId: '',
-    labels: '',
-    dueDate: '',
-    startDate: '',
-    assignmentDate: '',
-    expectedHours: '',
-    actualHours: '',
-    parentId: '',
-  });
+  const [form, setForm] = useState<TaskFormState>({ ...INITIAL_FORM });
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [recurrencePattern, setRecurrencePattern] = useState('weekly');
   const [recurrenceDays, setRecurrenceDays] = useState<string[]>([]);
-  const [parentFields, setParentFields] = useState({
-    initiatorName: '',
-    initiatorEmail: '',
-    initiatorPosition: '',
-    curatorName: '',
-    curatorEmail: '',
-    curatorPosition: '',
-    acceptanceStatus: '',
-  });
-  const [customDates, setCustomDates] = useState<Array<{ name: string; date: string }>>([]);
+  const [parentFields, setParentFields] = useState<ParentFieldsState>({ ...INITIAL_PARENT_FIELDS });
+  const [customDates, setCustomDates] = useState<CustomDate[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Pre-fill form when task changes
   useEffect(() => {
     if (!task) return;
     setTaskType(task.taskType || 'task');
 
-    let labelsStr = '';
-    try {
-      const parsed = typeof task.labels === 'string' ? JSON.parse(task.labels) : task.labels;
-      labelsStr = Array.isArray(parsed) ? parsed.join(', ') : '';
-    } catch { labelsStr = ''; }
+    const labelsStr = parseJsonField<string[]>(task.labels, []).join(', ');
 
     setForm({
       title: task.title || '',
@@ -125,21 +100,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
       parentId: task.parentId || '',
     });
 
-    // Multiple assignees
-    const extraAssignees = (task.assignees || [])
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((a: any) => a.userId || a.user?.id)
-      .filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const extraAssignees = (task.assignees || []).map((a: any) => a.userId || a.user?.id).filter(Boolean);
     setAssigneeIds(extraAssignees);
 
-    // Recurring
     setRecurrencePattern(task.recurrencePattern || 'weekly');
-    try {
-      const days = typeof task.recurrenceDays === 'string' ? JSON.parse(task.recurrenceDays) : task.recurrenceDays;
-      setRecurrenceDays(Array.isArray(days) ? days : []);
-    } catch { setRecurrenceDays([]); }
+    setRecurrenceDays(parseJsonField<string[]>(task.recurrenceDays, []));
 
-    // Parent task fields
     setParentFields({
       initiatorName: task.initiatorName || '',
       initiatorEmail: task.initiatorEmail || '',
@@ -150,14 +117,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
       acceptanceStatus: task.acceptanceStatus || '',
     });
 
-    try {
-      const cd = typeof task.customDates === 'string' ? JSON.parse(task.customDates) : task.customDates;
-      setCustomDates(Array.isArray(cd) ? cd : []);
-    } catch { setCustomDates([]); }
+    setCustomDates(parseJsonField<CustomDate[]>(task.customDates, []));
   }, [task]);
+
+  const updateForm = (patch: Partial<TaskFormState>) => setForm(prev => ({ ...prev, ...patch }));
 
   const parentTasks = existingTasks.filter(t => t.taskType === 'parent' && t.id !== task?.id);
   const parentAndStageTasks = existingTasks.filter(t => (t.taskType === 'parent' || t.taskType === 'stage') && t.id !== task?.id);
+
+  const toggleDay = (day: string) => {
+    setRecurrenceDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  };
 
   const handleSave = async () => {
     if (!task) return;
@@ -165,26 +135,23 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data: any = {};
+      const data: Record<string, any> = {};
 
-      // Always send editable fields
-      if (form.status !== task.status) data.status = form.status;
-      if (form.description !== (task.description || '')) data.description = form.description;
+      // Fields editable by everyone
+      const formRecord = form as unknown as Record<string, string>;
+      Object.assign(data, getChangedFields(task, formRecord, ['status', 'description']));
 
+      // Manager-only fields
       if (isManager) {
-        if (form.title !== task.title) data.title = form.title;
-        if (form.priority !== task.priority) data.priority = form.priority;
-        if (form.assigneeId !== (task.assigneeId || '')) data.assigneeId = form.assigneeId || null;
-        if (form.dueDate !== (task.dueDate || '')) data.dueDate = form.dueDate || null;
-        if (form.startDate !== (task.startDate || '')) data.startDate = form.startDate || null;
-        if (form.assignmentDate !== (task.assignmentDate || '')) data.assignmentDate = form.assignmentDate || null;
-        if (form.parentId !== (task.parentId || '')) data.parentId = form.parentId || null;
+        Object.assign(data, getChangedFields(task, formRecord, [
+          'title', 'priority', 'assigneeId', 'dueDate',
+          'startDate', 'assignmentDate', 'parentId',
+        ]));
 
         const newExpected = form.expectedHours ? parseFloat(form.expectedHours) : 0;
         if (newExpected !== (task.expectedHours || 0)) data.expectedHours = newExpected;
 
-        const labels = form.labels.split(',').map(l => l.trim()).filter(l => l);
-        data.labels = labels;
+        data.labels = form.labels.split(',').map(l => l.trim()).filter(l => l);
 
         if (taskType !== task.taskType) data.taskType = taskType;
 
@@ -200,7 +167,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
         }
       }
 
-      // actualHours can be edited by anyone on their own tasks
+      // actualHours editable by anyone
       const newActual = form.actualHours ? parseFloat(form.actualHours) : 0;
       if (newActual !== (task.actualHours || 0)) data.actualHours = newActual;
 
@@ -226,58 +193,27 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
     }
   };
 
-  const addCustomDate = () => setCustomDates([...customDates, { name: '', date: '' }]);
-  const removeCustomDate = (i: number) => setCustomDates(customDates.filter((_, idx) => idx !== i));
-  const toggleDay = (day: string) => {
-    setRecurrenceDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
-  };
-
   if (!task) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Редактировать — ${task.key}`} size="xl">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
-        {/* Task Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Тип задачи</label>
-          <div className="grid grid-cols-4 gap-2">
-            {TASK_TYPES.map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => isManager && setTaskType(type.value)}
-                disabled={!isManager}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  !isManager ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                } ${
-                  taskType === type.value
-                    ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-300'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <i className={type.icon}></i>
-                {type.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TaskTypeSelector value={taskType} onChange={setTaskType} disabled={!isManager} />
 
-        {/* Title */}
         <Input
           label="Название задачи"
           value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          onChange={(e) => updateForm({ title: e.target.value })}
           placeholder="Введите название задачи"
           disabled={!isManager}
           required
         />
 
-        {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Описание</label>
           <textarea
             value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            onChange={(e) => updateForm({ description: e.target.value })}
             placeholder="Описание задачи"
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -290,7 +226,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">Статус</label>
             <select
               value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              onChange={(e) => updateForm({ status: e.target.value })}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {BOARD_COLUMNS.map((col) => (
@@ -302,14 +238,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">Приоритет</label>
             <select
               value={form.priority}
-              onChange={(e) => setForm({ ...form, priority: e.target.value })}
+              onChange={(e) => updateForm({ priority: e.target.value })}
               disabled={!isManager}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <option value="P1">P1 - Критический</option>
-              <option value="P2">P2 - Высокий</option>
-              <option value="P3">P3 - Средний</option>
-              <option value="P4">P4 - Низкий</option>
+              {PRIORITIES.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -322,7 +257,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             </label>
             <select
               value={form.parentId}
-              onChange={(e) => setForm({ ...form, parentId: e.target.value })}
+              onChange={(e) => updateForm({ parentId: e.target.value })}
               disabled={!isManager}
               className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -340,7 +275,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             <UserPicker
               label="Основной исполнитель"
               value={form.assigneeId}
-              onChange={(userId) => setForm({ ...form, assigneeId: userId })}
+              onChange={(userId) => updateForm({ assigneeId: userId })}
               placeholder="Поиск пользователя..."
             />
             <MultiUserPicker
@@ -356,170 +291,47 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
         {/* Dates */}
         {taskType !== 'recurring' && (
           <div className="grid grid-cols-3 gap-4">
-            <Input
-              label="Дата назначения"
-              type="date"
-              value={form.assignmentDate}
-              onChange={(e) => setForm({ ...form, assignmentDate: e.target.value })}
-              disabled={!isManager}
-            />
-            <Input
-              label="Дата начала"
-              type="date"
-              value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-              disabled={!isManager}
-            />
-            <Input
-              label="Срок выполнения"
-              type="date"
-              value={form.dueDate}
-              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              disabled={!isManager}
-            />
+            <Input label="Дата назначения" type="date" value={form.assignmentDate} onChange={(e) => updateForm({ assignmentDate: e.target.value })} disabled={!isManager} />
+            <Input label="Дата начала" type="date" value={form.startDate} onChange={(e) => updateForm({ startDate: e.target.value })} disabled={!isManager} />
+            <Input label="Срок выполнения" type="date" value={form.dueDate} onChange={(e) => updateForm({ dueDate: e.target.value })} disabled={!isManager} />
           </div>
         )}
 
         {/* Labor costs */}
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Ожидаемые трудозатраты (ч)"
-            type="number"
-            value={form.expectedHours}
-            onChange={(e) => setForm({ ...form, expectedHours: e.target.value })}
-            placeholder="0"
-            disabled={!isManager}
-          />
-          <Input
-            label="Фактические трудозатраты (ч)"
-            type="number"
-            value={form.actualHours}
-            onChange={(e) => setForm({ ...form, actualHours: e.target.value })}
-            placeholder="0"
-          />
+          <Input label="Ожидаемые трудозатраты (ч)" type="number" value={form.expectedHours} onChange={(e) => updateForm({ expectedHours: e.target.value })} placeholder="0" disabled={!isManager} />
+          <Input label="Фактические трудозатраты (ч)" type="number" value={form.actualHours} onChange={(e) => updateForm({ actualHours: e.target.value })} placeholder="0" />
         </div>
 
         {/* Recurring settings */}
         {taskType === 'recurring' && isManager && (
-          <div className="border rounded-lg p-4 bg-blue-50/50 space-y-4">
-            <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <i className="ri-repeat-line"></i>
-              Настройки повторения
-            </h4>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Частота</label>
-              <select
-                value={recurrencePattern}
-                onChange={(e) => setRecurrencePattern(e.target.value)}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                {RECURRENCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-            {(recurrencePattern === 'weekly' || recurrencePattern === 'biweekly') && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Дни недели</label>
-                <div className="flex gap-2">
-                  {WEEKDAYS.map(day => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleDay(day.value)}
-                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                        recurrenceDays.includes(day.value)
-                          ? 'bg-primary-500 text-white'
-                          : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <Input label="Дата начала" type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-              <Input label="Срок выполнения" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
-            </div>
-          </div>
+          <RecurringFields
+            recurrencePattern={recurrencePattern}
+            onPatternChange={setRecurrencePattern}
+            recurrenceDays={recurrenceDays}
+            onToggleDay={toggleDay}
+            startDate={form.startDate}
+            onStartDateChange={(v) => updateForm({ startDate: v })}
+            dueDate={form.dueDate}
+            onDueDateChange={(v) => updateForm({ dueDate: v })}
+          />
         )}
 
         {/* Parent task fields */}
         {taskType === 'parent' && isManager && (
-          <div className="space-y-4">
-            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <i className="ri-user-star-line"></i> Инициатор
-              </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <Input label="ФИО" value={parentFields.initiatorName} onChange={(e) => setParentFields({ ...parentFields, initiatorName: e.target.value })} />
-                <Input label="Почта" type="email" value={parentFields.initiatorEmail} onChange={(e) => setParentFields({ ...parentFields, initiatorEmail: e.target.value })} />
-                <Input label="Должность" value={parentFields.initiatorPosition} onChange={(e) => setParentFields({ ...parentFields, initiatorPosition: e.target.value })} />
-              </div>
-            </div>
-            <div className="border rounded-lg p-4 bg-gray-50/50 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <i className="ri-shield-user-line"></i> Куратор
-              </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <Input label="ФИО" value={parentFields.curatorName} onChange={(e) => setParentFields({ ...parentFields, curatorName: e.target.value })} />
-                <Input label="Почта" type="email" value={parentFields.curatorEmail} onChange={(e) => setParentFields({ ...parentFields, curatorEmail: e.target.value })} />
-                <Input label="Должность" value={parentFields.curatorPosition} onChange={(e) => setParentFields({ ...parentFields, curatorPosition: e.target.value })} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Статус приёмки</label>
-              <select
-                value={parentFields.acceptanceStatus}
-                onChange={(e) => setParentFields({ ...parentFields, acceptanceStatus: e.target.value })}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {ACCEPTANCE_STATUSES.map(s => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Пользовательские даты</label>
-                <button type="button" onClick={addCustomDate} className="text-sm text-primary-600 hover:text-primary-700 cursor-pointer flex items-center gap-1">
-                  <i className="ri-add-line"></i> Добавить дату
-                </button>
-              </div>
-              {customDates.map((cd, index) => (
-                <div key={index} className="flex items-end gap-2 mb-2">
-                  <div className="flex-1">
-                    <Input
-                      label={index === 0 ? 'Название' : undefined}
-                      value={cd.name}
-                      onChange={(e) => { const u = [...customDates]; u[index].name = e.target.value; setCustomDates(u); }}
-                      placeholder="Дата согласования"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Input
-                      label={index === 0 ? 'Дата' : undefined}
-                      type="date"
-                      value={cd.date}
-                      onChange={(e) => { const u = [...customDates]; u[index].date = e.target.value; setCustomDates(u); }}
-                    />
-                  </div>
-                  <button type="button" onClick={() => removeCustomDate(index)} className="text-red-400 hover:text-red-600 cursor-pointer p-2 mb-0.5">
-                    <i className="ri-close-line"></i>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ParentTaskFields
+            parentFields={parentFields}
+            onFieldChange={(field, value) => setParentFields(prev => ({ ...prev, [field]: value }))}
+            customDates={customDates}
+            onCustomDatesChange={setCustomDates}
+          />
         )}
 
         {/* Labels */}
         <Input
           label="Метки"
           value={form.labels}
-          onChange={(e) => setForm({ ...form, labels: e.target.value })}
+          onChange={(e) => updateForm({ labels: e.target.value })}
           placeholder="frontend, api, bug (через запятую)"
           disabled={!isManager}
         />
