@@ -338,6 +338,7 @@ const ProjectBoard: React.FC = () => {
         onClose={() => setShowSettings(false)}
         project={project}
         onUpdate={setProject}
+        tasks={tasks}
       />
 
       <GitIntegration

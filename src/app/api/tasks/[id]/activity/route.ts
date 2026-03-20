@@ -97,6 +97,18 @@ export async function POST(
         where: { id: params.id },
         data: { actualHours: sum._sum.hours || 0 },
       });
+
+      // Если задача входит в заглавную — пересчитать actualHours заглавной
+      if (task.parentId) {
+        const childrenSum = await prisma.task.aggregate({
+          where: { parentId: task.parentId },
+          _sum: { actualHours: true },
+        });
+        await prisma.task.update({
+          where: { id: task.parentId },
+          data: { actualHours: childrenSum._sum.actualHours || 0 },
+        });
+      }
     }
 
     return NextResponse.json({ activity });

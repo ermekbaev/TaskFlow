@@ -70,6 +70,7 @@ export async function PUT(
       curatorName, curatorEmail, curatorPosition,
       acceptanceStatus, customDates,
       isRecurring, recurrencePattern, recurrenceDays,
+      isCallEvent, callStartTime, callEndTime,
     } = body;
 
     // MANAGER can update anything; USER can only update status of their own tasks
@@ -104,6 +105,9 @@ export async function PUT(
         ...(isRecurring !== undefined && { isRecurring }),
         ...(recurrencePattern !== undefined && { recurrencePattern }),
         ...(recurrenceDays !== undefined && { recurrenceDays: JSON.stringify(recurrenceDays) }),
+        ...(isCallEvent !== undefined && { isCallEvent }),
+        ...(callStartTime !== undefined && { callStartTime: callStartTime || null }),
+        ...(callEndTime !== undefined && { callEndTime: callEndTime || null }),
       },
       include: {
         project: { select: { id: true, key: true, name: true } },

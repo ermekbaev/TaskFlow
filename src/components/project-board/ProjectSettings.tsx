@@ -34,6 +34,7 @@ interface ProjectSettingsProps {
   onClose: () => void;
   project: Project;
   onUpdate: (project: Project) => void;
+  tasks?: Array<{ taskType: string; actualHours: number; expectedHours: number }>;
 }
 
 const ProjectSettings: React.FC<ProjectSettingsProps> = ({
@@ -41,6 +42,7 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
   onClose,
   project,
   onUpdate,
+  tasks = [],
 }) => {
   const router = useRouter();
 
@@ -309,6 +311,96 @@ const ProjectSettings: React.FC<ProjectSettingsProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Сводка трудозатрат */}
+          {(() => {
+            const leafTasks = tasks.filter(
+              (t) => t.taskType !== 'parent' && t.taskType !== 'stage'
+            );
+            const totalPlanned =
+              (project.externalLaborCost || 0) +
+              (project.internalLaborCost || 0);
+            const totalActual = leafTasks.reduce(
+              (s, t) => s + (t.actualHours || 0),
+              0
+            );
+            const totalExpected = leafTasks.reduce(
+              (s, t) => s + (t.expectedHours || 0),
+              0
+            );
+            if (totalPlanned === 0 && totalActual === 0 && totalExpected === 0)
+              return null;
+            const pct =
+              totalExpected > 0
+                ? Math.round((totalActual / totalExpected) * 100)
+                : null;
+            return (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <i className="ri-time-line mr-2"></i>
+                  Сводка трудозатрат
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {totalPlanned > 0 && (
+                    <div className="bg-blue-50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-gray-500 mb-1">По договору (план)</p>
+                      <p className="text-xl font-bold text-blue-700">
+                        {totalPlanned} ч
+                      </p>
+                    </div>
+                  )}
+                  {totalExpected > 0 && (
+                    <div className="bg-amber-50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-gray-500 mb-1">Оценка по задачам</p>
+                      <p className="text-xl font-bold text-amber-700">
+                        {totalExpected} ч
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 bg-emerald-50 rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Фактически списано</p>
+                    <p className="text-xl font-bold text-emerald-700">
+                      {totalActual} ч
+                    </p>
+                  </div>
+                  {pct !== null && (
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 mb-1">Выполнение оценки</p>
+                      <p
+                        className={`text-xl font-bold ${
+                          pct > 100
+                            ? 'text-red-600'
+                            : pct > 80
+                            ? 'text-amber-600'
+                            : 'text-emerald-700'
+                        }`}
+                      >
+                        {pct}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {totalExpected > 0 && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          pct && pct > 100
+                            ? 'bg-red-500'
+                            : pct && pct > 80
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(pct ?? 0, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Вложения проекта */}
           <div className="border-t pt-6">

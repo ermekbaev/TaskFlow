@@ -137,11 +137,22 @@ export async function POST(request: Request) {
       }
     }
 
-    // Generate task key
-    const taskCount = await prisma.task.count({
+    // Generate task key — find the max numeric suffix to avoid duplicates
+    const lastTask = await prisma.task.findFirst({
       where: { projectId },
+      orderBy: { createdAt: 'desc' },
+      select: { key: true },
     });
-    const key = `${project.key}-${taskCount + 1}`;
+    let nextNum = 1;
+    if (lastTask?.key) {
+      const parts = lastTask.key.split('-');
+      const lastNum = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    }
+    // Also count to handle gaps, take the higher value
+    const taskCount = await prisma.task.count({ where: { projectId } });
+    nextNum = Math.max(nextNum, taskCount + 1);
+    const key = `${project.key}-${nextNum}`;
 
     const task = await prisma.task.create({
       data: {
