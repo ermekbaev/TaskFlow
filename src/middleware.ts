@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'taskflow-jwt-secret-key-change-in-production-2024'
-);
+const jwtSecretValue = process.env.JWT_SECRET;
+if (!jwtSecretValue) {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
+const JWT_SECRET = new TextEncoder().encode(jwtSecretValue);
 
 const publicPaths = ['/', '/login', '/register'];
 const publicApiPaths = ['/api/auth/login', '/api/auth/register', '/api/auth/logout'];
